@@ -1,6 +1,8 @@
 import numpy as np
 import json
 
+__all__ = ['Question', 'Program']
+
 class Question(object):
     def __init__(self, json):
         super().__init__()

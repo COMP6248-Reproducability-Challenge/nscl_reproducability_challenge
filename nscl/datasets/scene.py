@@ -1,6 +1,8 @@
 import numpy as np
 import json
 
+__all__ = ['Scene', 'Object', 'Relationships']
+
 class Scene(object):
     def __init__(self, json):
         super().__init__()
