@@ -16,7 +16,11 @@ class ConceptEmbedding(nn.Module):
         self.concept_vector = nn.Parameter(torch.randn(dim))
         self.belong_vector = nn.Parameter(torch.randn(num_attributes))
 
-class EmbeddingSpace(nn.Module):
+class RelationConceptEmbedding(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+class AttributeEmbeddingSpace(nn.Module):
 
     ALL_ATTRIBUTES = ['color', 'size', 'material', 'shape']
     ALL_CONCEPTS = ['red', 'green', 'yellow', 'small', 'large'] # TODO : Add all concepts
@@ -60,3 +64,7 @@ class EmbeddingSpace(nn.Module):
         concepts = torch.ones(self.object_features.size(0), dtype=torch.int) # concept has to be converted into index 
         #TODO : Implement query function
         return concepts
+
+class RelationEmbeddingSpace(nn.Module): 
+    def __init__(self):
+        super().__init__()

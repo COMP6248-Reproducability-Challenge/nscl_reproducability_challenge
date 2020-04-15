@@ -24,6 +24,7 @@ class ProgramExecutor(object):
         return torch.ones(self.object_features.size(0), dtype=torch.float, device=self.object_features.device)
 
     def filter(self, object_set, attribute, concept):
-        embedding_space = self.attribute_embeddings.get_attribute_embedding(attribute)
-        attention_mask = embedding_space.similarity(self.object_features, attribute, concept)
-        
+        raise NotImplementedError()
+
+    def query(self, object_set, attribute):
+        raise NotImplementedError()
