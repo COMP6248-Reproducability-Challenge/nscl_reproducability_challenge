@@ -11,6 +11,7 @@ class Scene(object):
         self.split = json['split']
         self.objects = Scene.get_objects(json['objects'])
         self.relationships = Relationships(json['relationships'])
+        self.detection = json['objects_detection']
 
     @staticmethod
     def get_objects(objects_json):

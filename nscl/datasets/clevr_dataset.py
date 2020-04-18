@@ -12,9 +12,10 @@ import torchvision.transforms as transforms
 
 __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader']
 
+
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json, img_transform = None):
+    def __init__(self, img_root, scene_json, questions_json, img_transform=None):
         super().__init__()
 
         self.img_location = img_root
@@ -35,11 +36,11 @@ def build_clevr_dataset(img_root, scenes_json, questions_json):
     img_transform = transforms.Compose([
         transforms.ToTensor()
     ])
-    dataset = CLEVRDataset(img_root, scenes_json, questions_json, img_transform,)
+    dataset = CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
     return dataset
 
-def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last):
 
+def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last):
     def clevr_collate(batch):
         img_batch = []
         questions = []
