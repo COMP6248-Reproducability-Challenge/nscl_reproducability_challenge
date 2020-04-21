@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from nscl.models.embedding.embedding_space import AttributeEmbeddingSpace, RelationEmbeddingSpace
+from nscl.models.embedding.attribute_embedding_space import AttributeEmbeddingSpace
+from nscl.models.embedding.relation_embedding_space import RelationEmbeddingSpace
 from nscl.models.executor.program_executor import ProgramExecutor
 
 class ReasoningModule(nn.Module):
