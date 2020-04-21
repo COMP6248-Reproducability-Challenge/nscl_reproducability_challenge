@@ -6,7 +6,7 @@ class AttributeOperator(nn.Module):
         super().__init__()
         self.map = nn.Linear(input_dim, output_dim)
 
-    def forward(self, feature):
+    def forward(self, feature: Tensor):
         out = self.map(feature)
         return out
 
@@ -15,10 +15,6 @@ class ConceptEmbedding(nn.Module):
         super().__init__()
         self.concept_vector = nn.Parameter(torch.randn(dim))
         self.belong_vector = nn.Parameter(torch.randn(num_attributes))
-
-class RelationConceptEmbedding(nn.Module):
-    def __init__(self):
-        super().__init__()
 
 class AttributeEmbeddingSpace(nn.Module):
 
@@ -52,19 +48,15 @@ class AttributeEmbeddingSpace(nn.Module):
 
         return : 1D tensor representing the probability of each object is selected
     """
-    def similarity(self, object_features, attribute, concept):
+    def similarity(self, object_features: torch.Tensor, attribute: str, concept: str) -> torch.Tensor:
         probs = torch.ones(self.object_features.size(0), dtype=torch.float)
         #TODO : Implement similarity function based on the paper
         return probs
 
     """
-        return : 1D tensor representing the concept of each object for the given attribute
+        return : 1D tensor representing the concept(as int) of each object for the given attribute
     """
-    def get_attribute(self, object_features, attribute):
+    def get_attribute(self, object_features: torch.Tensor, attribute: str) -> torch.Tensor:
         concepts = torch.ones(self.object_features.size(0), dtype=torch.int) # concept has to be converted into index 
         #TODO : Implement query function
         return concepts
-
-class RelationEmbeddingSpace(nn.Module): 
-    def __init__(self):
-        super().__init__()
