@@ -1,11 +1,12 @@
 import torch
 from typing import NewType
 
-Object = NewType('Object', torch.FloatTensor)               # Feature vector
-ObjectSet = NewType('ObjectSet', torch.FloatTensor)         # Probability of each object being selected
-ObjectConcept = NewType('ObjectConcept', torch.FloatTensor) # Probability of belong to each concept of attribute 'a'
-Bool = NewType('Bool', torch.FloatTensor)                   # Probability of yes and no
-Count = NewType('Count', torch.IntTensor)                   # Count(single-item tensor)
+Object = NewType('Object', torch.FloatTensor)                   # Feature vector
+ObjectRelation = NewType('ObjectRelation', torch.FloatTensor)   # Relation vector
+ObjectSet = NewType('ObjectSet', torch.FloatTensor)             # Probability of each object being selected
+ObjectConcept = NewType('ObjectConcept', torch.FloatTensor)     # Probability of belong to each concept of attribute 'a'
+Bool = NewType('Bool', torch.FloatTensor)                       # Probability of yes and no
+Count = NewType('Count', torch.IntTensor)                       # Count(single-item tensor)
 
 class ProgramExecutor(object):
 
@@ -35,17 +36,17 @@ class ProgramExecutor(object):
         output = torch.min(object_set, mask)
         return output
 
-    def relate(self, object: Object, relation_concept: str) -> ObjectSet:
+    def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
         raise NotImplementedError()
 
     def relate_attribute_equal(self, object: Object, attribute: str) -> ObjectSet:
         raise NotImplementedError()
 
     def intersect(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
-        raise NotImplementedError()
+        return torch.min(object_set_1, object_set_2)
 
     def union(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
-        raise NotImplementedError()
+        return torch.max(object_set_1, object_set_2)
 
     def query(self, object: Object, attribute: str) -> ObjectConcept:
         raise NotImplementedError()

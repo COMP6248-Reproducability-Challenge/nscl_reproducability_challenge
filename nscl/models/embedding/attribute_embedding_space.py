@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from nscl.datasets.clevr_definition import CLEVRDefinition
 
 class AttributeOperator(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -18,9 +19,6 @@ class ConceptEmbedding(nn.Module):
 
 class AttributeEmbeddingSpace(nn.Module):
 
-    ALL_ATTRIBUTES = ['color', 'size', 'material', 'shape']
-    ALL_CONCEPTS = ['red', 'green', 'yellow', 'small', 'large'] # TODO : Add all concepts
-    
     # TODO : Adjust the dimension
     INPUT_DIM = 64
     OUTPUT_DIM = 64
@@ -29,12 +27,14 @@ class AttributeEmbeddingSpace(nn.Module):
         super().__init__()
         self.attribute_operators = dict()
         self.concept_embeddings = dict()
+        all_attributes = CLEVRDefinition.get_all_attributes()
+        all_concepts = CLEVRDefinition.get_all_concepts()
 
-        for a in self.ALL_ATTRIBUTES:
+        for a in all_attributes:
             self.attribute_operators[a] = AttributeOperator(self.INPUT_DIM, self.OUTPUT_DIM)
 
-        for c in self.ALL_CONCEPTS:
-            self.concept_embeddings[c] = ConceptEmbedding(self.OUTPUT_DIM, len(self.ALL_ATTRIBUTES))
+        for c in all_concepts:
+            self.concept_embeddings[c] = ConceptEmbedding(self.OUTPUT_DIM, len(all_attributes))
 
     """
         object_features : 2D tensor containing visual features of all objects in the scene
