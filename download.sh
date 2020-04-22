@@ -1,17 +1,21 @@
-mkdir -p data/raw
-cd data/raw
+mkdir -p data
+cd data
 
 echo "Downloading CLEVR dataset..."
 wget https://dl.fbaipublicfiles.com/clevr/CLEVR_v1.0.zip
 unzip CLEVR_v1.0.zip
 rm CLEVR_v1.0.zip
 
-echo "Downloading CLEVR-mini dataset..."
-wget http://nsvqa.csail.mit.edu/assets/CLEVR_mini.zip
-unzip CLEVR_mini.zip
-rm CLEVR_mini.zip
+echo "Downloading annotated scene"
+cd CLEVR_v1.0/scenes
+wget http://nscl.csail.mit.edu/data/code-data/clevr/train/scenes.json.zip
+unzip scenes.json.zip -d train
+rm scenes.json.zip
 
-cd ..  # data
+wget http://nscl.csail.mit.edu/data/code-data/clevr/val/scenes.json.zip
+unzip scenes.json.zip -d val
+rm scenes.json.zip
+
 echo "Downloading pretrained model..."
 wget http://nsvqa.csail.mit.edu/assets/pretrained.zip
 unzip pretrained.zip
