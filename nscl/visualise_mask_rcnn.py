@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
 from nscl.datasets.clevr_dataset import build_clevr_dataset
-from pycocotools import mask as mask_utils
+from coco.PythonAPI.pycocotools import mask as mask_utils
 
 
 def label(xy, text):

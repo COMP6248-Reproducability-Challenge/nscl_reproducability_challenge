@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from nscl.datasets.scene import Scene
-from pycocotools import mask as mask_utils
+from coco.PythonAPI.pycocotools import mask as mask_utils
 
 
 class CLEVRObjectDataset(Dataset):
