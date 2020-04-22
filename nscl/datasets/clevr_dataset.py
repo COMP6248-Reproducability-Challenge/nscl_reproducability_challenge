@@ -2,6 +2,7 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
+from torch.utils.data.sampler import Sampler
 import numpy as np
 import json
 from nscl.datasets.question import Question
@@ -38,7 +39,7 @@ def build_clevr_dataset(img_root, scenes_json, questions_json):
     dataset = CLEVRDataset(img_root, scenes_json, questions_json, img_transform,)
     return dataset
 
-def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last):
+def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None):
 
     def clevr_collate(batch):
         img_batch = []
@@ -50,4 +51,23 @@ def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last):
             scenes.append(_batch[2])
         return default_collate(img_batch), questions, scenes
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate, sampler=sampler)
+
+class CLEVRCurriculumSampler(Sampler):
+
+    def __init__(self, data_source, max_scene_size, max_program_size):
+        super().__init__(data_source)
+        self.data_source = data_source
+        self.max_scene_size = max_scene_size
+        self.max_program_size = max_program_size
+        self.indices = []
+        for (index, data) in enumerate(self.data_source):
+            img, question, scene = data
+            if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
+                self.indices.append(index)
+
+    def __iter__(self):
+        return iter(self.indices)
+
+    def __len__(self):
+        return len(self.indices)
