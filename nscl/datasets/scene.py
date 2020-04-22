@@ -24,6 +24,7 @@ class Object(object):
         self.size = json['size']
         self.shape = json['shape']
         self.material = json['material']
+        self.coordinates = json['pixel_coords']
 
 class Relationships(object):
     def __init__(self, json):
