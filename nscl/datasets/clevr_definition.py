@@ -1,3 +1,5 @@
+__all__ = ['CLEVRDefinition']
+
 class CLEVRDefinition(object):
 
     attribute_concept_map = {
@@ -34,5 +36,3 @@ class CLEVRDefinition(object):
     @staticmethod
     def get_relation_concept_map(relation):
         return CLEVRDefinition.relation_concept_map(relation)
-
-    
