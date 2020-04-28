@@ -20,6 +20,7 @@ class ConceptEmbedding(nn.Module):
         self.concept_vector = nn.Parameter(torch.randn(dim), requires_grad=True)
         self.belong_vector = torch.zeros(num_attributes, requires_grad=False)
         self.belong_vector[attribute_id] = 1.0
+        self.belong_vector = self.belong_vector.unsqueeze(0)
 
 class AttributeEmbeddingSpace(nn.Module):
 
@@ -50,18 +51,24 @@ class AttributeEmbeddingSpace(nn.Module):
         return : 1D tensor representing the probability of each object is selected
     """
     def similarity(self, object_features: torch.Tensor, concept: str) -> torch.Tensor:
-        all_operators = [getattr(self.attribute_operators, attr) for attr in self.all_attributes]           # All attribute operators
-        object_embeddings = torch.stack([operator(object_features) for operator in all_operators], dim=0)   # Map features to all spaces
-        object_embeddings = object_embeddings / object_embeddings.norm(p=2, dim=-1, keepdim=True)           # normalize object embeddings
+        all_operators = [getattr(self.attribute_operators, attr) for attr in self.all_attributes]               # All attribute operators
+        object_embeddings = torch.stack([operator(object_features) for operator in all_operators], dim=-1)      # Map features to all spaces
+        object_embeddings = object_embeddings / object_embeddings.norm(p=2, dim=-1, keepdim=True)               # normalize object embeddings
+        # print(object_embeddings.shape)
 
         concept_embedding = getattr(self.concept_embeddings, concept)
-        concept_vector = concept_embedding.concept_vector / concept_embedding.concept_vector.norm(p=2)                        # reference vector(normalized)
-        belong_vector = concept_embedding.belong_vector                                                     # belong vector
-        cosine_sim = ((object_embeddings * concept_vector).sum(dim=-1) - self.margin) / self.tau
-
-        similarity_scores = F.sigmoid((cosine_sim * belong_vector).sum(dim=-1))
-        print(similarity_scores)
-        return similarity_scores
+        concept_vector = concept_embedding.concept_vector / concept_embedding.concept_vector.norm(p=2)          # reference vector(normalized)
+        concept_vector = torch.stack([concept_vector for i in range(len(self.all_attributes))], dim=-1)         # Extend dimension so it can be broadcasted
+        # print(concept_vector.shape)
+        cosine_sim = ((object_embeddings * concept_vector).sum(dim=-2) - self.margin) / self.tau
+        # print(cosine_sim.shape)
+        
+        belong_vector = concept_embedding.belong_vector                                                         # belong vector
+        similarity = (belong_vector * cosine_sim).sum(dim=-1)                                                   # remove irrelevant attribute
+        # print(similarity.shape)
+        # print(similarity)
+        logits = F.sigmoid(similarity)
+        return logits
 
     """
         return : 1D tensor representing the concept(as int) of each object for the given attribute
