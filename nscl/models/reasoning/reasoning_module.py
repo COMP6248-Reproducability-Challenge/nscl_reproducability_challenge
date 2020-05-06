@@ -11,17 +11,19 @@ class ReasoningModule(nn.Module):
         self.relation_space = RelationEmbeddingSpace()
 
     def forward(self, visual_features, relation_features, question):
-        inputs = []
-        buffers = []
-        result = None
+        input_buffers = []
         executor = ProgramExecutor(visual_features, relation_features, self.attribute_space, self.relation_space)
         for p in question.program:
+            inp = input_buffers[p.input_id] if p.operator != 'scene' else None
             if p.operator == 'scene':
-                executor.scene()
+                input_buffers.append(executor.scene())
             elif p.operator == 'query':
-                executor.query(*input, p.attribute)
+                input_buffers.append(executor.query(inp, p.attribute))
             elif p.operator == 'filter':
-                executor.filter(*input, p.attribute, p.concept)
+                input_buffers.append(executor.filter(inp, p.attribute, p.concept))
+            elif p.oprator == 'unique':
+                input_buffers.append(executor.unique(inp))
             #TODO: Implement other operators
 
+        result = input_buffers[-1]
         return result

@@ -29,12 +29,21 @@ class ProgramExecutor(object):
         self.relation_embeddings = relation_embeddings
 
     def scene(self) -> ObjectSet:
-        return torch.ones(self.object_features.size(0), dtype=torch.float, device=self.object_features.device)
+        return torch.ones(self.object_features.shape[0], dtype=torch.float, device=self.object_features.device)
+
+    def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
+        indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
+        max_idx = (object_set * indices_vector).sum().item()                                        # object_set has to be 1-hot tensor
+        mask = self.attribute_embeddings.get_attribute(self.object_features[max_idx], attribute)
+        return mask
 
     def filter(self, object_set: ObjectSet, concept: str) -> ObjectSet:
         mask = self.attribute_embeddings.similarity(self.object_features, concept)
         output = torch.min(object_set, mask)
         return output
+
+    def unique(self, object_set: ObjectSet):
+        return torch.nn.functional.gumbel_softmax(object_set, hard=True)
 
     def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
         raise NotImplementedError()
@@ -47,9 +56,6 @@ class ProgramExecutor(object):
 
     def union(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
         return torch.max(object_set_1, object_set_2)
-
-    def query(self, object: Object, attribute: str) -> ObjectConcept:
-        raise NotImplementedError()
 
     def query_attribute_equal(self, obj_1: Object, obj_2: Object, attribute: str) -> Bool:
         raise NotImplementedError()
