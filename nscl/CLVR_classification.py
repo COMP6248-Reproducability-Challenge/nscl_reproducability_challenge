@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytorch_lightning as pl
 import torch
+from sklearn import metrics
 from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader, random_split
@@ -37,7 +38,7 @@ val_scene_json = os.path.abspath(osp.dirname(os.getcwd())) + '/data/CLEVR_v1.0/s
 print('Preparing Dataset')
 
 train_dataset = CLEVRObjectDataset(train_img_root, train_scene_json, img_transform=img_preprocess, max_size=100000)
-test_dataset = CLEVRObjectDataset(train_img_root, train_scene_json, img_transform=img_preprocess, max_size=1000)
+test_dataset = CLEVRObjectDataset(train_img_root, train_scene_json, img_transform=img_preprocess, max_size=10000)
 train_dataset, val_dataset = random_split(train_dataset, [90000, 10000])
 
 train_loader = DataLoader(train_dataset.dataset, batch_size=128, shuffle=True)
@@ -114,15 +115,26 @@ print('Starting Training...')
 clevr_model = CLEVRObjectModel()
 trainer = pl.Trainer(max_epochs=10, gpus=1)
 trainer.fit(clevr_model)
+trainer.save_checkpoint("clevr_model.ckpt")
+
+print('Starting Testing')
 
 trainer.test()
 
-img, target = test_dataset[0]
-prediction = clevr_model(img.unsqueeze(0).to('cuda:0'))
+# clevr_model = CLEVRObjectModel.load_from_checkpoint(os.getcwd() + '/clevr_model.ckpt').to('cuda:0')
+clevr_model.eval()
+dataiter = iter(test_loader)
+images, labels = dataiter.next()
 
-predicted_class = test_dataset.classes[prediction.argmax(1).cpu()]
-print(prediction)
+images = images.to('cuda:0')
+prediction = clevr_model(images)
+
+predicted_classes = prediction.argmax(1).cpu()
+print(metrics.classification_report(labels, predicted_classes, target_names=test_dataset.classes))
+
+print(predicted_classes[0])
+predicted_class = test_dataset.classes[predicted_classes[0]]
 print('The predicted class is', predicted_class)
-print('The target is', test_dataset.classes[target])
-plt.imshow(img.permute(1, 2, 0))
+print('The target is', test_dataset.classes[labels[0]])
+plt.imshow(images[0].cpu().permute(1, 2, 0))
 plt.show()
