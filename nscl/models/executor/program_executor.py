@@ -1,4 +1,12 @@
 import torch
+from typing import NewType
+
+Object = NewType('Object', torch.FloatTensor)                   # Feature vector
+ObjectRelation = NewType('ObjectRelation', torch.FloatTensor)   # Relation vector
+ObjectSet = NewType('ObjectSet', torch.FloatTensor)             # Probability of each object being selected
+ObjectConcept = NewType('ObjectConcept', torch.FloatTensor)     # Probability of belong to each concept of attribute 'a'
+Bool = NewType('Bool', torch.FloatTensor)                       # Probability of yes and no
+Count = NewType('Count', torch.IntTensor)                       # Count(single-item tensor)
 
 class ProgramExecutor(object):
 
@@ -20,11 +28,51 @@ class ProgramExecutor(object):
         self.attribute_embeddings = attribute_embeddings
         self.relation_embeddings = relation_embeddings
 
-    def scene(self):
-        return torch.ones(self.object_features.size(0), dtype=torch.float, device=self.object_features.device)
+    def scene(self) -> ObjectSet:
+        return torch.ones(self.object_features.shape[0], dtype=torch.float, device=self.object_features.device)
 
-    def filter(self, object_set, attribute, concept):
+    def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
+        indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
+        max_idx = (object_set * indices_vector).sum().item()                                        # object_set has to be 1-hot tensor
+        mask = self.attribute_embeddings.get_attribute(self.object_features[max_idx], attribute)
+        return mask
+
+    def filter(self, object_set: ObjectSet, concept: str) -> ObjectSet:
+        mask = self.attribute_embeddings.similarity(self.object_features, concept)
+        output = torch.min(object_set, mask)
+        return output
+
+    def unique(self, object_set: ObjectSet):
+        return torch.nn.functional.gumbel_softmax(object_set, hard=True)
+
+    def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
         raise NotImplementedError()
 
-    def query(self, object_set, attribute):
+    def relate_attribute_equal(self, object: Object, attribute: str) -> ObjectSet:
         raise NotImplementedError()
+
+    def intersect(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
+        return torch.min(object_set_1, object_set_2)
+
+    def union(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
+        return torch.max(object_set_1, object_set_2)
+
+    def query_attribute_equal(self, obj_1: Object, obj_2: Object, attribute: str) -> Bool:
+        raise NotImplementedError()
+
+    def exist(self, object_set: ObjectSet) -> Bool:
+        raise NotImplementedError()
+
+    def count(self, object_set: ObjectSet) -> Count:
+        raise NotImplementedError()
+
+    def count_less_than(self, object_set: ObjectSet) -> Bool:
+        raise NotImplementedError()
+
+    def count_greater_than(self, object_set: ObjectSet) -> Bool:
+        raise NotImplementedError()
+
+    def count_equal(self, object_set: ObjectSet) -> Bool:
+        raise NotImplementedError()
+
+

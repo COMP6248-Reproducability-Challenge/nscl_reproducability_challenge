@@ -24,11 +24,13 @@ class Program(object):
         super().__init__()
         inputs = json['inputs']
         function = json['function'] if 'function' in json else json['type']
+        input_ids = json['inputs']
         value_inputs = json['value_inputs']
         
         self.operator = ''
         self.attribute = ''
         self.concept = ''
+        self.input_id = input_ids[0] if function != 'scene' else -1
 
         if function == 'scene':
             self.operator = 'scene'
