@@ -14,15 +14,21 @@ class ReasoningModule(nn.Module):
         input_buffers = []
         executor = ProgramExecutor(visual_features, relation_features, self.attribute_space, self.relation_space)
         for p in question.program:
-            inp = input_buffers[p.input_id] if p.operator != 'scene' else None
+            inputs = []
+            for input_id in p.input_ids:
+                inputs.append(input_buffers[p.input_id])
+
             if p.operator == 'scene':
                 input_buffers.append(executor.scene())
             elif p.operator == 'query':
-                input_buffers.append(executor.query(inp, p.attribute))
+                input_buffers.append(executor.query(*inputs, p.attribute))
             elif p.operator == 'filter':
-                input_buffers.append(executor.filter(inp, p.attribute, p.concept))
+                input_buffers.append(executor.filter(*inputs, p.attribute, p.concept))
             elif p.oprator == 'unique':
-                input_buffers.append(executor.unique(inp))
+                input_buffers.append(executor.unique(*inputs))
+            elif p.operator == 'query_attribute_equal':
+                input_buffers.append(executor.query_attribute_equal(*inputs, p.attribute))
+                
             #TODO: Implement other operators
 
         result = input_buffers[-1]

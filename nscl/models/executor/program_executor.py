@@ -5,7 +5,7 @@ Object = NewType('Object', torch.FloatTensor)                   # Feature vector
 ObjectRelation = NewType('ObjectRelation', torch.FloatTensor)   # Relation vector
 ObjectSet = NewType('ObjectSet', torch.FloatTensor)             # Probability of each object being selected
 ObjectConcept = NewType('ObjectConcept', torch.FloatTensor)     # Probability of belong to each concept of attribute 'a'
-Bool = NewType('Bool', torch.FloatTensor)                       # Probability of yes and no
+Bool = NewType('Bool', torch.FloatTensor)                       # Probability of yes
 Count = NewType('Count', torch.IntTensor)                       # Count(single-item tensor)
 
 class ProgramExecutor(object):
@@ -33,7 +33,7 @@ class ProgramExecutor(object):
 
     def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
         indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
-        max_idx = (object_set * indices_vector).sum().item()                                        # object_set has to be 1-hot tensor
+        max_idx = (object_set * indices_vector).sum().item() # object_set has to be 1-hot tensor
         mask = self.attribute_embeddings.get_attribute(self.object_features[max_idx], attribute)
         return mask
 
@@ -45,25 +45,29 @@ class ProgramExecutor(object):
     def unique(self, object_set: ObjectSet):
         return torch.nn.functional.gumbel_softmax(object_set, hard=True)
 
-    def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
-        raise NotImplementedError()
-
-    def relate_attribute_equal(self, object: Object, attribute: str) -> ObjectSet:
-        raise NotImplementedError()
-
     def intersect(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
         return torch.min(object_set_1, object_set_2)
 
     def union(self, object_set_1: ObjectSet, object_set_2: ObjectSet) -> ObjectSet:
         return torch.max(object_set_1, object_set_2)
 
-    def query_attribute_equal(self, obj_1: Object, obj_2: Object, attribute: str) -> Bool:
-        raise NotImplementedError()
-
     def exist(self, object_set: ObjectSet) -> Bool:
-        raise NotImplementedError()
+        return torch.max(object_set)
 
     def count(self, object_set: ObjectSet) -> Count:
+        return object_set.sum() # Don't round !!!
+
+    def query_attribute_equal(self, object_set_1: ObjectSet, object_set_2: ObjectSet, attribute: str) -> Bool:
+        indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
+        max_idx_1 = (object_set_1 * indices_vector).sum().item()
+        max_idx_2 = (object_set_2 * indices_vector).sum().item()
+        output = self.attribute_embeddings.is_attribute_equal(self.object_features[max_idx_1], self.object_features[max_idx_2], attribute)
+        return output
+
+    def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
+        raise NotImplementedError()
+
+    def relate_attribute_equal(self, object: Object, attribute: str) -> ObjectSet:
         raise NotImplementedError()
 
     def count_less_than(self, object_set: ObjectSet) -> Bool:
