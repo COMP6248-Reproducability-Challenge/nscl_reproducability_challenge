@@ -1,45 +1,52 @@
-import os
-import torch
+import json
+import os.path as osp
+
+import torchvision.transforms as transforms
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import Sampler
-import numpy as np
-import json
+
 from nscl.datasets.question import Question
 from nscl.datasets.scene import Scene
-from PIL import Image
-import os.path as osp
-import torchvision.transforms as transforms
 
 __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader']
 
+
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json):
+    def __init__(self, img_root, scene_json, questions_json, img_transform=None):
         super().__init__()
 
         self.img_location = img_root
         self.raw_scenes = json.load(open(scene_json))['scenes']
         self.raw_questions = json.load(open(questions_json))['questions']
+        self.img_transform = img_transform
 
     def __getitem__(self, index):
         question = Question(self.raw_questions[index])
         scene = Scene(self.raw_scenes[question.img_index])
-        img = Image.open(osp.join(self.img_location, question.img_file)).convert('RGB')
+        img = self.img_transform(Image.open(osp.join(self.img_location, question.img_file)).convert('RGB'))
         return img, question, scene
 
     def __len__(self):
         return len(self.raw_questions)
 
-def build_clevr_dataset(img_root, scenes_json, questions_json):
-    # img_transform = transforms.Compose([
-    #     transforms.ToTensor()
-    # ])
-    dataset = CLEVRDataset(img_root, scenes_json, questions_json)
-    return dataset
+
+def build_clevr_dataset(img_root, scenes_json, questions_json, img_transform=None):
+    # transform for resnet model
+    if img_transform is None:
+        image_transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        return CLEVRDataset(img_root, scenes_json, questions_json, image_transform)
+    else:
+        return CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
+
 
 def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None):
-
     def clevr_collate(batch):
         img_batch = []
         questions = []
@@ -50,7 +57,9 @@ def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None
             scenes.append(_batch[2])
         return default_collate(img_batch), questions, scenes
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate, sampler=sampler)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate,
+                      sampler=sampler)
+
 
 class CLEVRCurriculumSampler(Sampler):
 

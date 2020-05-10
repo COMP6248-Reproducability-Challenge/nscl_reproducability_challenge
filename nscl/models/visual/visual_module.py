@@ -1,61 +1,58 @@
-import os
-import os.path as osp
-
 import torch
 from torch import nn
-from torchvision import transforms
 from torchvision.models import resnet34
 from torchvision.ops import RoIAlign
 
-from coco.PythonAPI.pycocotools import mask as mask_utils
+from nscl.models.visual.functional import normalize
 
 __all__ = ['VisualModule']
-
-from nscl.datasets.clevr_dataset import build_clevr_dataset
 
 
 class VisualModule(nn.Module):
 
-    def __init__(self, ):
+    def __init__(self):
         super().__init__()
-        self.preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-
+        self.image_size = 256
+        self.feature_dim = 256
+        self.output_dim = 256
         self.pool_size = 7
         self.downsample_rate = 16
-        self.roi_align = RoIAlign(self.pool_size, 1.0/self.downsample_rate, 2)
+
+        self.roi_align = RoIAlign(self.pool_size, 1.0 / self.downsample_rate, -1)
+        self.context_feature_extract = nn.Conv2d(self.feature_dim, self.feature_dim, 1)
+        self.object_feature_fuse = nn.Conv2d(self.feature_dim * 2, self.output_dim, 1)
+        self.object_feature_fc = nn.Sequential(nn.ReLU(True),
+                                               nn.Linear(self.output_dim * self.pool_size ** 2, self.output_dim))
 
         self.resnet = resnet34(pretrained=True)
         self.resnet_feature_extractor = nn.Sequential(*list(self.resnet.children())[:-3])
         self.resnet_feature_extractor.eval()
 
-    def forward(self, data):
-        images, questions, scenes = data
-        boxes = [mask_utils.toBbox(d['mask']) for d in scenes.detection]
-        a_boxes = torch.tensor([[0, box[0], box[1], box[0] + box[2], box[1] + box[3]] for box in boxes])
-        image_feature = self.resnet_feature_extractor(self.preprocess(images).unsqueeze(0))
-        box_feature = self.roi_align(image_feature, a_boxes)
-        return image_feature, box_feature
+    def forward(self, images, questions, scenes):
+        outputs = []
+        image_features = self.resnet_feature_extractor(images)
+        context_features = self.context_feature_extract(image_features)
+        size = images.size(0)
 
+        for idx in range(size):
+            boxes = scenes[idx].boxes
+            batch_idx = torch.zeros(boxes.size(0), 1) + idx
+            boxes = torch.cat([batch_idx, boxes], dim=-1)
 
-train_img_root = '/Users/mark/Projects/nscl_reproducability_challenge/data/test/images'
-train_scene_json = '/Users/mark/Projects/nscl_reproducability_challenge/data/test/train_scenes.json'
-train_question_json = '/Users/mark/Projects/nscl_reproducability_challenge/data/test/train_questions.json'
+            with torch.no_grad():
+                image_h, image_w = image_features.size(2) * self.downsample_rate, image_features.size(
+                    3) * self.downsample_rate
+                image_box = torch.cat([
+                    torch.zeros(boxes.size(0), 1),
+                    torch.zeros(boxes.size(0), 1),
+                    torch.zeros(boxes.size(0), 1),
+                    image_w + torch.zeros(boxes.size(0), 1),
+                    image_h + torch.zeros(boxes.size(0), 1)
+                ], dim=-1)
 
-val_img_root = osp.abspath(osp.dirname(os.getcwd())) + '/data/CLEVR_v1.0/images/val'
-val_scene_json = osp.abspath(osp.dirname(os.getcwd())) + '/data/CLEVR_v1.0/scenes/val/scenes.json'
+            box_feature = self.roi_align(image_features, boxes)
+            this_context_features = self.roi_align(context_features, image_box)
+            this_object_features = self.object_feature_fuse(torch.cat([box_feature, this_context_features], dim=1))
+            outputs.append(normalize(self.object_feature_fc(this_object_features.view(box_feature.size(0), -1))))
 
-dataset = build_clevr_dataset(train_img_root, train_scene_json, train_question_json)
-
-visual_module = VisualModule()
-img_feature, obj_feature = visual_module(dataset[0])
-
-print('Image Feature shape:', img_feature.shape)
-print('Box Feature shape:', obj_feature.shape)
-
-print(obj_feature)
-
+        return outputs
