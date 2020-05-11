@@ -75,12 +75,3 @@ class AttributeEmbeddingSpace(nn.Module):
         all_concept_pr = torch.cat([self.similarity(object_feature.unsqueeze(0), c) for c in all_concepts])
         all_concept_pr = all_concept_pr / all_concept_pr.sum(dim=-1)
         return all_concept_pr
-
-    def is_attribute_equal(self, object_feature_1: torch.Tensor, object_feature_2: torch.Tensor, attribute: str) -> torch.Tensor:
-        operator = getattr(self.attribute_operators, attribute)
-        embedding_1 = operator(object_feature_1)
-        embedding_1 = embedding_1 / embedding_1.sum() 
-        embedding_2 = operator(object_feature_2)
-        embedding_2 = embedding_2 / embedding_2.sum()
-        cosine_dist = (embedding_1 * embedding_2).sum()
-        return F.sigmoid((cosine_dist - self.margin)/self.tau)

@@ -57,12 +57,8 @@ class ProgramExecutor(object):
     def count(self, object_set: ObjectSet) -> Count:
         return object_set.sum() # Don't round !!!
 
-    def query_attribute_equal(self, object_set_1: ObjectSet, object_set_2: ObjectSet, attribute: str) -> Bool:
-        indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
-        max_idx_1 = (object_set_1 * indices_vector).sum().item()
-        max_idx_2 = (object_set_2 * indices_vector).sum().item()
-        output = self.attribute_embeddings.is_attribute_equal(self.object_features[max_idx_1], self.object_features[max_idx_2], attribute)
-        return output
+    def query_attribute_equal(self, object_concept_1: ObjectConcept, object_concept_2: ObjectConcept, attribute: str) -> Bool:
+        return (object_concept_1 * object_concept_2).sum()
 
     def relate(self, object: ObjectRelation, relation_concept: str) -> ObjectSet:
         raise NotImplementedError()
