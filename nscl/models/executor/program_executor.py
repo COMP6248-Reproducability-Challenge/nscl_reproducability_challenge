@@ -33,8 +33,7 @@ class ProgramExecutor(object):
 
     def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
         indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
-        max_idx = (object_set * indices_vector).sum().item() # object_set has to be 1-hot tensor
-        mask = self.attribute_embeddings.get_attribute(self.object_features[max_idx], attribute)
+        mask = self.attribute_embeddings.get_attribute(object_set @ self.object_features, attribute)
         return mask
 
     def filter(self, object_set: ObjectSet, concept: str) -> ObjectSet:

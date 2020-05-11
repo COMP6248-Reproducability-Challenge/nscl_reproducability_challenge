@@ -5,9 +5,9 @@ from nscl.models.embedding.relation_embedding_space import RelationEmbeddingSpac
 from nscl.models.executor.program_executor import ProgramExecutor
 
 class ReasoningModule(nn.Module):
-    def __init__(self):
+    def __init__(self, definitions, input_dim, embedding_dim):
         super().__init__()
-        self.attribute_space = AttributeEmbeddingSpace()
+        self.attribute_space = AttributeEmbeddingSpace(definitions, input_dim, embedding_dim)
         self.relation_space = RelationEmbeddingSpace()
 
     def forward(self, visual_features, relation_features, question):
@@ -16,20 +16,22 @@ class ReasoningModule(nn.Module):
         for p in question.program:
             inputs = []
             for input_id in p.input_ids:
-                inputs.append(input_buffers[p.input_id])
+                inputs.append(input_buffers[input_id])
 
             if p.operator == 'scene':
                 input_buffers.append(executor.scene())
             elif p.operator == 'query':
                 input_buffers.append(executor.query(*inputs, p.attribute))
             elif p.operator == 'filter':
-                input_buffers.append(executor.filter(*inputs, p.attribute, p.concept))
-            elif p.oprator == 'unique':
+                input_buffers.append(executor.filter(*inputs, p.concept))
+            elif p.operator == 'unique':
                 input_buffers.append(executor.unique(*inputs))
             elif p.operator == 'query_attribute_equal':
                 input_buffers.append(executor.query_attribute_equal(*inputs, p.attribute))
+            elif p.operator == 'count':
+                input_buffers.append(executor.count(*input))
                 
-            #TODO: Implement other operators
+            #TODO: Implement remaining operators
 
         result = input_buffers[-1]
         return result
