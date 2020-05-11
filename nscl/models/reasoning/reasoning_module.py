@@ -29,7 +29,9 @@ class ReasoningModule(nn.Module):
             elif p.operator == 'query_attribute_equal':
                 input_buffers.append(executor.query_attribute_equal(*inputs, p.attribute))
             elif p.operator == 'count':
-                input_buffers.append(executor.count(*input))
+                input_buffers.append(executor.count(*inputs))
+            elif p.operator == 'exist':
+                input_buffers.append(executor.exist(*inputs))
                 
             #TODO: Implement remaining operators
 
