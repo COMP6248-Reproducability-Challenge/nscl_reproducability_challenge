@@ -36,7 +36,7 @@ def build_clevr_dataset(img_root, scenes_json, questions_json):
     img_transform = transforms.Compose([
         transforms.ToTensor()
     ])
-    dataset = CLEVRDataset(img_root, scenes_json, questions_json, img_transform,)
+    dataset = CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
     return dataset
 
 def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None):

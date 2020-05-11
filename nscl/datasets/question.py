@@ -30,7 +30,7 @@ class Program(object):
         self.operator = ''
         self.attribute = ''
         self.concept = ''
-        self.input_id = input_ids[0] if function != 'scene' else -1
+        self.input_ids = input_ids
 
         if function == 'scene':
             self.operator = 'scene'
