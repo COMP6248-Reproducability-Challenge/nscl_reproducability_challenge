@@ -32,8 +32,7 @@ class ProgramExecutor(object):
         return torch.ones(self.object_features.shape[0], dtype=torch.float, device=self.object_features.device)
 
     def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
-        indices_vector = torch.tensor(list(range(self.object_features.shape[0])))
-        mask = self.attribute_embeddings.get_attribute(object_set @ self.object_features, attribute)
+        mask = self.attribute_embeddings.get_attribute(object_set @ self.object_features, attribute) # object_set has to be 1-hot tensor
         return mask
 
     def filter(self, object_set: ObjectSet, concept: str) -> ObjectSet:
