@@ -28,7 +28,7 @@ class VisualModule(nn.Module):
         self.resnet_feature_extractor = nn.Sequential(*list(self.resnet.children())[:-3])
         self.resnet_feature_extractor.eval()
 
-    def forward(self, images, questions, scenes):
+    def forward(self, images, scenes):
         outputs = []
         image_features = self.resnet_feature_extractor(images)
         context_features = self.context_feature_extract(image_features)

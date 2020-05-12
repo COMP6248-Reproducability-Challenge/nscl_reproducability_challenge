@@ -17,6 +17,6 @@ data_loader = build_clevr_dataloader(dataset, batch_size=10, shuffle=True, drop_
 visual_module = VisualModule()
 
 imgs, questions, scenes = next(iter(data_loader))
-obj_features = visual_module(imgs, questions, scenes)
+obj_features = visual_module(imgs, scenes)
 
 print('Object Features:\n', len(obj_features))
