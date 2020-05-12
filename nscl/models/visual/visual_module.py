@@ -32,9 +32,9 @@ class VisualModule(nn.Module):
         outputs = []
         image_features = self.resnet_feature_extractor(images)
         context_features = self.context_feature_extract(image_features)
-        size = images.size(0)
+        batch_size = images.size(0)
 
-        for idx in range(size):
+        for idx in range(batch_size):
             boxes = scenes[idx].boxes
             batch_idx = torch.zeros(boxes.size(0), 1) + idx
             boxes = torch.cat([batch_idx, boxes], dim=-1)

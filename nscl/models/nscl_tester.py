@@ -2,7 +2,8 @@ import os
 import os.path as osp
 
 from nscl.datasets.clevr_dataset import build_clevr_dataset, build_clevr_dataloader
-from nscl.models.visual.visual_module import VisualModule
+from nscl.datasets.clevr_definition import CLEVRDefinition
+from nscl.models.nscl_module import NSCLModule
 
 train_img_root = '/Users/mark/Projects/nscl_reproducability_challenge/data/test/images'
 train_scene_json = '/Users/mark/Projects/nscl_reproducability_challenge/data/test/train_scenes.json'
@@ -14,10 +15,8 @@ val_scene_json = osp.abspath(osp.dirname(os.getcwd())) + '/data/CLEVR_v1.0/scene
 dataset = build_clevr_dataset(train_img_root, train_scene_json, train_question_json)
 data_loader = build_clevr_dataloader(dataset, batch_size=10, shuffle=True, drop_last=False)
 
-visual_module = VisualModule()
+model = NSCLModule(CLEVRDefinition.attribute_concept_map)
 
 imgs, questions, scenes = next(iter(data_loader))
-obj_features = visual_module(imgs, scenes)
-
-print('Object Features:\n', len(obj_features))
-print('Object Featrures shape:', obj_features[0].shape)
+results = model(imgs, questions, scenes)
+print(results)
