@@ -1,7 +1,10 @@
 import numpy as np
-import json
+import torch
+
+from coco.PythonAPI.pycocotools import mask as mask_utils
 
 __all__ = ['Scene', 'Object', 'Relationships']
+
 
 class Scene(object):
     def __init__(self, json):
@@ -11,10 +14,16 @@ class Scene(object):
         self.split = json['split']
         self.objects = Scene.get_objects(json['objects'])
         self.relationships = Relationships(json['relationships'])
+        self.detection = json['objects_detection']
+
+        # change box positions to be the same scale as transformed CLEVR image
+        self.boxes = torch.tensor(transform_bbox(np.array([mask_utils.toBbox(d['mask']) for d in self.detection]), 0.8),
+                                  dtype=torch.float32)
 
     @staticmethod
     def get_objects(objects_json):
         return [Object(json) for json in objects_json]
+
 
 class Object(object):
     def __init__(self, json):
@@ -23,6 +32,8 @@ class Object(object):
         self.size = json['size']
         self.shape = json['shape']
         self.material = json['material']
+        self.coordinates = json['pixel_coords']
+
 
 class Relationships(object):
     def __init__(self, json):
@@ -31,3 +42,12 @@ class Relationships(object):
         self.behind = json['behind']
         self.front = json['front']
         self.left = json['left']
+
+
+def transform_bbox(_bbox, scale_factor):
+    bbox = _bbox.copy()
+    bbox[:, 0] *= scale_factor
+    bbox[:, 1] *= scale_factor
+    bbox[:, 2] = (_bbox[:, 0] + _bbox[:, 2]) * scale_factor
+    bbox[:, 3] = (_bbox[:, 1] + _bbox[:, 3]) * scale_factor
+    return bbox

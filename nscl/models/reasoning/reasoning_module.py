@@ -1,8 +1,9 @@
-import torch
 import torch.nn as nn
+
 from nscl.models.embedding.attribute_embedding_space import AttributeEmbeddingSpace
 from nscl.models.embedding.relation_embedding_space import RelationEmbeddingSpace
 from nscl.models.executor.program_executor import ProgramExecutor
+
 
 class ReasoningModule(nn.Module):
     def __init__(self, definitions, input_dim, embedding_dim):
@@ -32,8 +33,11 @@ class ReasoningModule(nn.Module):
                 input_buffers.append(executor.count(*inputs))
             elif p.operator == 'exist':
                 input_buffers.append(executor.exist(*inputs))
-                
-            #TODO: Implement remaining operators
+
+            # TODO: Implement remaining operators
+            else:
+                print(f'Operator not implemented {p.operator}')
+                break
 
         result = input_buffers[-1]
         return result
