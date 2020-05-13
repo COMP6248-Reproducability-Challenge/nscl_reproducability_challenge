@@ -65,16 +65,24 @@ def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last,
 
 class CLEVRCurriculumSampler(Sampler):
 
-    def __init__(self, data_source, max_scene_size, max_program_size):
+    def __init__(self, data_source, max_scene_size, max_program_size, max_data_size=None):
         super().__init__(data_source)
         self.data_source = data_source
         self.max_scene_size = max_scene_size
         self.max_program_size = max_program_size
+        self.max_data_size = max_data_size
         self.indices = []
+        self.count = 0
+
+        print('Preparing curriculum sampler....')
         for (index, data) in enumerate(self.data_source):
             img, question, scene = data
             if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
                 self.indices.append(index)
+
+            self.count += 1
+            if self.max_data_size is not None and self.count >= self.max_data_size:
+                break
 
     def __iter__(self):
         return iter(self.indices)
