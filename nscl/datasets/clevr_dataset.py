@@ -10,7 +10,7 @@ from torch.utils.data.sampler import Sampler
 from nscl.datasets.question import Question
 from nscl.datasets.scene import Scene
 
-__all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader']
+__all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader', 'CLEVRCurriculumSampler']
 
 
 class CLEVRDataset(Dataset):
@@ -19,7 +19,9 @@ class CLEVRDataset(Dataset):
         super().__init__()
 
         self.img_location = img_root
+        print(f'loading scenes from: {scene_json}')
         self.raw_scenes = json.load(open(scene_json))['scenes']
+        print(f'loading questions from: {questions_json}')
         self.raw_questions = json.load(open(questions_json))['questions']
         self.img_transform = img_transform
 
@@ -46,7 +48,7 @@ def build_clevr_dataset(img_root, scenes_json, questions_json, img_transform=Non
         return CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
 
 
-def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None):
+def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, sampler=None):
     def clevr_collate(batch):
         img_batch = []
         questions = []
@@ -57,8 +59,8 @@ def build_clevr_dataloader(dataset, batch_size, shuffle, drop_last, sampler=None
             scenes.append(_batch[2])
         return default_collate(img_batch), questions, scenes
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate,
-                      sampler=sampler)
+    return DataLoader(dataset, collate_fn=clevr_collate, num_workers=num_workers, batch_size=batch_size,
+                      shuffle=shuffle, drop_last=drop_last, sampler=sampler)
 
 
 class CLEVRCurriculumSampler(Sampler):
