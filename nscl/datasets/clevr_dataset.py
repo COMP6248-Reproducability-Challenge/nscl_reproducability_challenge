@@ -74,9 +74,16 @@ class CLEVRCurriculumSampler(Sampler):
         self.indices = []
         self.count = 0
 
+        unimplemented_operator = ['relate', 'relate_attribute_equal']
         print('Preparing curriculum sampler....')
         for (index, data) in enumerate(self.data_source):
             img, question, scene = data
+
+            operators = [p.operator for p in question.program]
+            intersect = list(set(unimplemented_operator) & set(operators))
+            if len(intersect) > 0:
+                continue
+
             if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
                 self.indices.append(index)
 

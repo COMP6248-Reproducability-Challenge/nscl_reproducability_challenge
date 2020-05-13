@@ -35,6 +35,9 @@ class ReasoningModule(nn.Module):
                 input_buffers.append(executor.exist(*inputs))
 
             # TODO: Implement remaining operators
+            else:
+                print(f'Operator not implemented {p.operator}')
+                break
 
         result = input_buffers[-1]
         return result
