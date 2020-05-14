@@ -1,5 +1,7 @@
 import numpy as np
 import json
+import torch
+from nscl.datasets.clevr_definition import CLEVRDefinition
 
 __all__ = ['Question', 'Program']
 
@@ -14,10 +16,28 @@ class Question(object):
         self.answer = json['answer']
         self.raw_question = json['question']
         self.program = Question.get_program_seq(json['program'])
+        self.answer_tensor = Question.get_answer_tensor(json['answer'])
 
     @staticmethod
     def get_program_seq(programs_json):
         return [Program(p) for p in programs_json]
+
+    @staticmethod
+    def get_answer_tensor(answer):
+        if isinstance(answer, bool) and answer:
+            return torch.tensor(1.)
+        if isinstance(answer, bool):
+            return torch.tensor(0.)
+        if isinstance(answer, int):
+            return torch.tensor(int(answer))
+
+        for attr, concepts in CLEVRDefinition.attribute_concept_map.items():
+            if answer in concepts:
+                answer_tensor = torch.zeros(len(concepts), dtype=float)
+                answer_tensor[concepts.index(answer)] = 1.
+                return answer_tensor
+
+        raise Exception('Unknown answer')
 
 class Program(object):
     def __init__(self, json):
