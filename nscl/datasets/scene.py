@@ -1,7 +1,10 @@
 import numpy as np
 import torch
 
-from coco.PythonAPI.pycocotools import mask as mask_utils
+try:
+    from coco.PythonAPI.pycocotools import mask as mask_utils
+except:
+    from pycocotools import mask as mask_utils
 
 __all__ = ['Scene', 'Object', 'Relationships']
 
@@ -14,7 +17,7 @@ class Scene(object):
         self.split = json['split']
         self.objects = Scene.get_objects(json['objects'])
         self.relationships = Relationships(json['relationships'])
-        self.detection = json['objects_detection']
+        self.detection = json['objects_detection'] if 'objects_detection' in json else json['objects']
 
         # change box positions to be the same scale as transformed CLEVR image
         self.boxes = torch.tensor(transform_bbox(np.array([mask_utils.toBbox(d['mask']) for d in self.detection]), 0.8),

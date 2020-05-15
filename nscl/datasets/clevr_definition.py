@@ -1,7 +1,9 @@
-__all__ = ['CLEVRDefinition']
+__all__ = ['CLEVRDefinition', 'QuestionTypes']
+
+from enum import Enum
+
 
 class CLEVRDefinition(object):
-
     attribute_concept_map = {
         'color': ['gray', 'red', 'blue', 'green', 'brown', 'purple', 'cyan', 'yellow'],
         'material': ['rubber', 'metal'],
@@ -36,3 +38,9 @@ class CLEVRDefinition(object):
     @staticmethod
     def get_relation_concept_map(relation):
         return CLEVRDefinition.relation_concept_map(relation)
+
+
+class QuestionTypes(Enum):
+    BOOLEAN = 1
+    ATTRIBUTE = 2
+    COUNT = 3

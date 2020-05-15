@@ -1,9 +1,9 @@
-import numpy as np
-import json
 import torch
-from nscl.datasets.clevr_definition import CLEVRDefinition
+
+from nscl.datasets.clevr_definition import CLEVRDefinition, QuestionTypes
 
 __all__ = ['Question', 'Program']
+
 
 class Question(object):
     def __init__(self, json):
@@ -17,6 +17,7 @@ class Question(object):
         self.raw_question = json['question']
         self.program = Question.get_program_seq(json['program'])
         self.answer_tensor = Question.get_answer_tensor(self.answer)
+        self.question_type = Question.get_question_type(self.answer)
 
     @staticmethod
     def get_program_seq(programs_json):
@@ -40,6 +41,16 @@ class Question(object):
         print(answer)
         raise Exception('Unknown answer')
 
+    @staticmethod
+    def get_question_type(answer):
+        if answer == 'yes' or answer == 'no':
+            return QuestionTypes.BOOLEAN
+        if answer.isdigit():
+            return QuestionTypes.COUNT
+
+        return QuestionTypes.ATTRIBUTE
+
+
 class Program(object):
     def __init__(self, json):
         super().__init__()
@@ -47,7 +58,7 @@ class Program(object):
         function = json['function'] if 'function' in json else json['type']
         input_ids = json['inputs']
         value_inputs = json['value_inputs']
-        
+
         self.operator = ''
         self.attribute = ''
         self.concept = ''
@@ -89,8 +100,10 @@ class Program(object):
             else:
                 raise ValueError('Unknown CLEVR operation: {}.'.format(function))
 
+
 def get_function_operation(function):
-        return function.split('_')[0]
-    
+    return function.split('_')[0]
+
+
 def get_function_attribute(function):
     return function.split('_')[1]

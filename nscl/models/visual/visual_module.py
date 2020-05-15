@@ -26,6 +26,12 @@ class VisualModule(nn.Module):
 
         self.resnet = resnet34(pretrained=True)
         self.resnet_feature_extractor = nn.Sequential(*list(self.resnet.children())[:-3])
+
+        # disable training resnet for now
+        for param in self.resnet_feature_extractor.parameters():
+            param.requires_grad = False
+
+        # Confirm if we need this?
         self.resnet_feature_extractor.eval()
 
     def forward(self, images, scenes):

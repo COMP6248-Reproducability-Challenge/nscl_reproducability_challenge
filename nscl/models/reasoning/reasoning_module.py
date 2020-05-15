@@ -33,6 +33,8 @@ class ReasoningModule(nn.Module):
                 input_buffers.append(executor.count(*inputs))
             elif p.operator == 'exist':
                 input_buffers.append(executor.exist(*inputs))
+            elif p.operator == 'union':
+                input_buffers.append(executor.union(*inputs))
 
             # TODO: Implement remaining operators
             else:
