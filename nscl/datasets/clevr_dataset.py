@@ -74,7 +74,7 @@ class CLEVRCurriculumSampler(Sampler):
         self.indices = []
         self.count = 0
 
-        unimplemented_operator = ['relate', 'relate_attribute_equal']
+        unimplemented_operator = ['relate', 'relate_attribute_equal', 'count_less']
         print('Preparing curriculum sampler....')
         for (index, data) in enumerate(self.data_source):
             img, question, scene = data
