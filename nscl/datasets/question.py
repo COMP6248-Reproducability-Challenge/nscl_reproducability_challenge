@@ -25,17 +25,15 @@ class Question(object):
     @staticmethod
     def get_answer_tensor(answer):
         if isinstance(answer, bool) and answer:
-            return torch.tensor(1.)
+            return torch.tensor([1., 0.], dtype=torch.float)
         if isinstance(answer, bool):
-            return torch.tensor(0.)
+            return torch.tensor([0., 1.], dtype=torch.float)
         if isinstance(answer, int):
-            return torch.tensor(int(answer))
+            return torch.tensor(float(answer), dtype=torch.float)
 
         for attr, concepts in CLEVRDefinition.attribute_concept_map.items():
             if answer in concepts:
-                answer_tensor = torch.zeros(len(concepts), dtype=float)
-                answer_tensor[concepts.index(answer)] = 1.
-                return answer_tensor
+                return torch.tensor([concepts.index(answer)], dtype=torch.long)
 
         raise Exception('Unknown answer')
 
