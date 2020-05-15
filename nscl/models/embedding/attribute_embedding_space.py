@@ -64,10 +64,10 @@ class AttributeEmbeddingSpace(nn.Module):
         concept_embedding = getattr(self.concept_embeddings, concept)
         concept_vector = concept_embedding.concept_vector / concept_embedding.concept_vector.norm(p=2)
         concept_vector = torch.stack([concept_vector for i in range(len(self.all_attributes))],
-                                     dim=-1)  # Extend dimension so it can be broadcasted
+                                     dim=-1) # Extend dimension so it can be broadcasted
         cosine_sim = ((object_embeddings * concept_vector).sum(dim=-2) - self.margin) / self.tau
 
-        belong_vector = concept_embedding.belong_vector
+        belong_vector = concept_embedding.belong_vector.to(object_features.device)
         similarity = (belong_vector * cosine_sim).sum(dim=-1)  # Remove irrelevant attribute
         logits = torch.sigmoid(similarity)
         return logits

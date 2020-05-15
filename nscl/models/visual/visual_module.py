@@ -56,8 +56,8 @@ class VisualModule(nn.Module):
                     image_h + torch.zeros(boxes.size(0), 1)
                 ], dim=-1)
 
-            box_feature = self.roi_align(image_features, boxes)
-            this_context_features = self.roi_align(context_features, image_box)
+            box_feature = self.roi_align(image_features, boxes.to(images.device))
+            this_context_features = self.roi_align(context_features, image_box.to(images.device))
             this_object_features = self.object_feature_fuse(torch.cat([box_feature, this_context_features], dim=1))
             outputs.append(normalize(self.object_feature_fc(this_object_features.view(box_feature.size(0), -1))))
 
