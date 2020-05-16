@@ -28,7 +28,11 @@ class CLEVRDataset(Dataset):
     def __getitem__(self, index):
         question = Question(self.raw_questions[index])
         scene = Scene(self.raw_scenes[question.img_index])
-        img = self.img_transform(Image.open(osp.join(self.img_location, question.img_file)).convert('RGB'))
+        try:
+            img = self.img_transform(Image.open(osp.join(self.img_location, question.img_file)).convert('RGB'))
+        except Exception as ex:
+            print(f'Unable to load image {question.img_file}')
+            img = None
         return img, question, scene
 
     def __len__(self):
@@ -58,7 +62,7 @@ def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last,
         for img, question, scene in batch:
             operators = [p.operator for p in question.program]
             intersect = list(set(unimplemented_operator) & set(operators))
-            if len(intersect) > 0:
+            if len(intersect) > 0 or img is None:
                 continue
             if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
                 continue
