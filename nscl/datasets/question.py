@@ -26,19 +26,16 @@ class Question(object):
     @staticmethod
     def get_answer_tensor(answer):
         if answer == 'yes':
-            return torch.tensor(1., dtype=torch.float)
+            return torch.tensor([1., 0.], dtype=torch.float)
         if answer == 'no':
-            return torch.tensor(0., dtype=torch.float)
+            return torch.tensor([0., 1.], dtype=torch.float)
         if answer.isdigit():
-            return torch.tensor(int(answer), dtype=torch.float)
+            return torch.tensor(float(answer), dtype=torch.float)
 
         for attr, concepts in CLEVRDefinition.attribute_concept_map.items():
             if answer in concepts:
-                answer_tensor = torch.zeros(len(concepts), dtype=torch.float)
-                answer_tensor[concepts.index(answer)] = 1.
-                return answer_tensor
+                return torch.tensor([concepts.index(answer)], dtype=torch.long)
 
-        print(answer)
         raise Exception('Unknown answer')
 
     @staticmethod
