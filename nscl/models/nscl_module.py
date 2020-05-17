@@ -5,7 +5,7 @@ from nscl.models.visual.visual_module import VisualModule
 
 
 class NSCLModule(nn.Module):
-    def __init__(self, definitions, input_dim=256, embedding_dim=16):
+    def __init__(self, definitions, input_dim=256, embedding_dim=64):
         super().__init__()
         self.visual_module = VisualModule()
         self.reasoning_module = ReasoningModule(definitions, input_dim, embedding_dim)

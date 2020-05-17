@@ -4,6 +4,7 @@ import os.path as osp
 import torch
 from torch import nn
 from torch import optim
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import random_split
 from tqdm import tqdm
 
@@ -33,6 +34,7 @@ bce_loss = nn.BCELoss()
 ce_loss = nn.CrossEntropyLoss()
 
 opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
+scheduler = StepLR(opt, step_size=5, gamma=0.1)
 
 for e in range(epoch):
     model.train()
@@ -83,9 +85,13 @@ for e in range(epoch):
                         predicted_answer = predicted_answer.unsqueeze(0)
                         loss = ce_loss(predicted_answer, true_answer)
 
+                    total_loss = total_loss + loss
+
                 epoch_loss = (epoch_loss * idx + total_loss.item()) / (idx + 1)
                 t.set_postfix(loss='{:05.3f}'.format(epoch_loss))
                 t.update()
+
+    scheduler.step()
 
 
 torch.save(model.state_dict(), 'nscl.pt')
@@ -114,29 +120,29 @@ with tqdm(total=len(val_loader), desc='test') as t:
                 true_answer = q.answer_tensor.to(device)
                 if q.question_type == QuestionTypes.COUNT:
                     loss = mse_loss(predicted_answer, true_answer)
-                    print(q.raw_question)
-                    print('True Answer', q.answer)
-                    print('Predicted Answer', int(round(predicted_answer.item())))
+                    # print(q.raw_question)
+                    # print('True Answer', q.answer)
+                    # print('Predicted Answer', int(round(predicted_answer.item())))
                     if int(round(predicted_answer.item())) == q.answer:
                         correct += 1
                 elif q.question_type == QuestionTypes.BOOLEAN:
                     predicted_answer = torch.stack(
                         [predicted_answer, torch.tensor(1 - predicted_answer.item(), device=device)])
                     loss = bce_loss(predicted_answer, true_answer)
-                    print(q.raw_question)
-                    print('True Answer', q.answer)
-                    ans = 'yes' if torch.argmax(predicted_answer).item() == 0 else 'no'
-                    print('Predicted Answer', ans)
+                    # print(q.raw_question)
+                    # print('True Answer', q.answer)
+                    ans = 'yes' if int(torch.argmax(predicted_answer).item()) == 0 else 'no'
+                    # print('Predicted Answer', ans)
                     if ans == q.answer:
                         correct += 1
                 else:
                     predicted_answer = predicted_answer.unsqueeze(0)
                     loss = ce_loss(predicted_answer, true_answer)
-                    print(q.raw_question)
-                    print('True Answer', q.answer)
-                    print('True Answer id', q.answer_tensor.item())
+                    # print(q.raw_question)
+                    # print('True Answer', q.answer)
+                    # print('True Answer id', q.answer_tensor.item())
                     ans = torch.argmax(predicted_answer).item()
-                    print('Predicted Answer', ans)
+                    # print('Predicted Answer', ans)
                     if int(ans) == int(q.answer_tensor.item()):
                         correct += 1
 
@@ -148,4 +154,6 @@ with tqdm(total=len(val_loader), desc='test') as t:
             t.set_postfix(loss='{:05.3f}'.format(epoch_loss))
             t.update()
 
+print('correct', correct)
+print('count', count)
 print('Test Accuracy', correct / count)
