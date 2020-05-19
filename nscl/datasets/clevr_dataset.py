@@ -44,8 +44,16 @@ class CLEVRDataset(Dataset):
 
     @staticmethod
     def filter_questions(questions, scenes, max_program_size, max_scene_size):
-        filtered_questions = list(filter(None, [q if len(q.program) <= max_program_size else None for q in questions]))
-        filtered_questions = list(filter(None, [q if len(scenes[q.img_index].objects) <= max_scene_size else None for q in filtered_questions]))
+        program_filtered_questions = list(filter(None, [q if len(q.program) <= max_program_size else None for q in questions]))
+        scene_filtered_questions = list(filter(None, [q if len(scenes[q.img_index].objects) <= max_scene_size else None for q in program_filtered_questions]))
+        
+        filtered_questions = []
+        unimplemented_operator = ['relate', 'relate_attribute_equal', 'count_less', 'count_greater', 'count_equal']
+        for q in scene_filtered_questions:
+            operators = [p.operator for p in q.program]
+            intersect = list(set(unimplemented_operator) & set(operators))
+            if len(intersect) == 0:
+                filtered_questions.append(q)
         return filtered_questions
 
 
