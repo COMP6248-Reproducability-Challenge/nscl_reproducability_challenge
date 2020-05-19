@@ -38,8 +38,7 @@ class CLEVRDefinition(object):
     @staticmethod
     def get_relation_concept_map(relation):
         return CLEVRDefinition.relation_concept_map(relation)
-
-
+        
 class QuestionTypes(Enum):
     BOOLEAN = 1
     ATTRIBUTE = 2

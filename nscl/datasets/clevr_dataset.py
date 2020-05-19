@@ -15,7 +15,7 @@ __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader', 'CLE
 
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json, img_transform=None):
+    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None):
         super().__init__()
 
         self.img_location = img_root
@@ -24,10 +24,14 @@ class CLEVRDataset(Dataset):
         print(f'loading questions from: {questions_json}')
         self.raw_questions = json.load(open(questions_json))['questions']
         self.img_transform = img_transform
+        self.questions = [Question(q) for q in self.raw_questions]
+        self.scenes = [Scene(s) for s in self.raw_scenes]
+        if max_program_size is not None and max_program_size is not None:
+            self.questions = CLEVRDataset.filter_questions(self.questions, self.scenes, max_program_size, max_scene_size)
 
     def __getitem__(self, index):
-        question = Question(self.raw_questions[index])
-        scene = Scene(self.raw_scenes[question.img_index])
+        question = self.questions[index]
+        scene = self.scenes[question.img_index]
         try:
             img = self.img_transform(Image.open(osp.join(self.img_location, question.img_file)).convert('RGB'))
         except Exception as ex:
@@ -36,10 +40,16 @@ class CLEVRDataset(Dataset):
         return img, question, scene
 
     def __len__(self):
-        return len(self.raw_questions)
+        return len(self.questions)
+
+    @staticmethod
+    def filter_questions(questions, scenes, max_program_size, max_scene_size):
+        filtered_questions = list(filter(None, [q if len(q.program) <= max_program_size else None for q in questions]))
+        filtered_questions = list(filter(None, [q if len(scenes[q.img_index].objects) <= max_scene_size else None for q in filtered_questions]))
+        return filtered_questions
 
 
-def build_clevr_dataset(img_root, scenes_json, questions_json, img_transform=None):
+def build_clevr_dataset(img_root, scenes_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None):
     # transform for resnet model
     if img_transform is None:
         image_transform = transforms.Compose([
@@ -47,64 +57,20 @@ def build_clevr_dataset(img_root, scenes_json, questions_json, img_transform=Non
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
-        return CLEVRDataset(img_root, scenes_json, questions_json, image_transform)
+        return CLEVRDataset(img_root, scenes_json, questions_json, max_program_size, max_scene_size, image_transform)
     else:
-        return CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
+        return CLEVRDataset(img_root, scenes_json, questions_json, max_program_size, max_scene_size, img_transform)
 
 
-def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, max_scene_size, max_program_size, sampler=None):
-    unimplemented_operator = ['relate', 'relate_attribute_equal', 'count_less', 'count_greater', 'count_equal']
-
+def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, sampler=None):
     def clevr_collate(batch):
         img_batch = []
         questions = []
         scenes = []
-        for img, question, scene in batch:
-            operators = [p.operator for p in question.program]
-            intersect = list(set(unimplemented_operator) & set(operators))
-            if len(intersect) > 0 or img is None:
-                continue
-            if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
-                continue
-            img_batch.append(img)
-            questions.append(question)
-            scenes.append(scene)
+        for _batch in batch:
+            img_batch.append(_batch[0])
+            questions.append(_batch[1])
+            scenes.append(_batch[2])
         return default_collate(img_batch), questions, scenes
 
-    return DataLoader(dataset, collate_fn=clevr_collate, num_workers=num_workers, batch_size=batch_size,
-                      shuffle=shuffle, drop_last=drop_last, sampler=sampler)
-
-
-class CLEVRCurriculumSampler(Sampler):
-
-    def __init__(self, data_source, max_scene_size, max_program_size, max_data_size=None):
-        super().__init__(data_source)
-        self.data_source = data_source
-        self.max_scene_size = max_scene_size
-        self.max_program_size = max_program_size
-        self.max_data_size = max_data_size
-        self.indices = []
-        self.count = 0
-
-        unimplemented_operator = ['relate', 'relate_attribute_equal', 'count_less']
-        print('Preparing curriculum sampler....')
-        for (index, data) in enumerate(self.data_source):
-            img, question, scene = data
-
-            operators = [p.operator for p in question.program]
-            intersect = list(set(unimplemented_operator) & set(operators))
-            if len(intersect) > 0:
-                continue
-
-            if len(scene.objects) <= max_scene_size and len(question.program) <= max_program_size:
-                self.indices.append(index)
-
-            self.count += 1
-            if self.max_data_size is not None and self.count >= self.max_data_size:
-                break
-
-    def __iter__(self):
-        return iter(self.indices)
-
-    def __len__(self):
-        return len(self.indices)
+    return DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle, drop_last=drop_last, collate_fn=clevr_collate, sampler=sampler)
