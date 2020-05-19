@@ -25,11 +25,11 @@ class Question(object):
 
     @staticmethod
     def get_answer_tensor(answer):
-        if answer == 'yes':
+        if isinstance(answer, bool) and answer:
             return torch.tensor([1., 0.], dtype=torch.float)
-        if answer == 'no':
+        if isinstance(answer, bool):
             return torch.tensor([0., 1.], dtype=torch.float)
-        if answer.isdigit():
+        if isinstance(answer, int):
             return torch.tensor(float(answer), dtype=torch.float)
 
         for attr, concepts in CLEVRDefinition.attribute_concept_map.items():
@@ -40,11 +40,10 @@ class Question(object):
 
     @staticmethod
     def get_question_type(answer):
-        if answer == 'yes' or answer == 'no':
+        if isinstance(answer, bool):
             return QuestionTypes.BOOLEAN
-        if answer.isdigit():
+        if isinstance(answer, int):
             return QuestionTypes.COUNT
-
         return QuestionTypes.ATTRIBUTE
 
 
