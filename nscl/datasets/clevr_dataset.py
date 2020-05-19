@@ -52,7 +52,7 @@ def build_clevr_dataset(img_root, scenes_json, questions_json, img_transform=Non
         return CLEVRDataset(img_root, scenes_json, questions_json, img_transform)
 
 
-def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, max_scene_size, max_program_size):
+def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, max_scene_size, max_program_size, sampler=None):
     unimplemented_operator = ['relate', 'relate_attribute_equal', 'count_less', 'count_greater', 'count_equal']
 
     def clevr_collate(batch):
@@ -72,7 +72,7 @@ def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last,
         return default_collate(img_batch), questions, scenes
 
     return DataLoader(dataset, collate_fn=clevr_collate, num_workers=num_workers, batch_size=batch_size,
-                      shuffle=shuffle, drop_last=drop_last)
+                      shuffle=shuffle, drop_last=drop_last, sampler=sampler)
 
 
 class CLEVRCurriculumSampler(Sampler):
