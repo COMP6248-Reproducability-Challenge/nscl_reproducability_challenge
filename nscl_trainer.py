@@ -12,6 +12,11 @@ from nscl.datasets.clevr_dataset import build_clevr_dataset, build_clevr_dataloa
 from nscl.datasets.clevr_definition import CLEVRDefinition, QuestionTypes
 from nscl.models.nscl_module import NSCLModule
 
+import wandb
+
+wandb.init(project="nscl-reproduce")
+save_interval = 10  # epoch
+
 train_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/train'
 train_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/train/scenes.json'
 train_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_train_questions.json'
@@ -28,15 +33,18 @@ val_loader = build_clevr_dataloader(val_dataset, batch_size=batch_size, num_work
                                     drop_last=False)
 
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
-epoch = 10
+epoch = 100
 model = NSCLModule(CLEVRDefinition.attribute_concept_map).to(device)
+
+wandb.watch(model)
+
 # model.load_state_dict(torch.load('nscl.pt', map_location=torch.device(device)))
 mse_loss = nn.MSELoss()
 bce_loss = nn.BCELoss()
 ce_loss = nn.CrossEntropyLoss()
 
 opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.1)
-scheduler = StepLR(opt, step_size=5, gamma=0.1)
+scheduler = StepLR(opt, step_size=50, gamma=0.1)
 
 for e in range(epoch):
     model.train()
@@ -65,6 +73,7 @@ for e in range(epoch):
             total_loss.backward()
             opt.step()
             epoch_loss = (epoch_loss * idx + total_loss.item()) / (idx + 1)
+            wandb.log({"epoch_loss": epoch_loss})
             t.set_postfix(loss='{:05.3f}'.format(epoch_loss))
             t.update()
 
@@ -95,4 +104,6 @@ for e in range(epoch):
                 t.update()
 
     scheduler.step()
-    torch.save(model.state_dict(), f'nscl-{e}.pt')
+
+    if e % save_interval == 0:
+        torch.save(model.state_dict(), os.path.join(wandb.run.dir, f'nscl-{e}.pt'))
