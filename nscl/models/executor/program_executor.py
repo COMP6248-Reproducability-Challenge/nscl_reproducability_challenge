@@ -21,22 +21,21 @@ class ProgramExecutor(object):
         attribute_embeddings : embedding space for all object_level attributes(color, material, size ...)
         relation_embeddings : embedding space for all relation_attributes(left, right, ...)
     """
-    def __init__(self, object_features, relation_features, attribute_embeddings, relation_embeddings):
+    def __init__(self, object_annotation):
         super().__init__()
-        self.object_features = object_features
-        self.relation_features = relation_features
-        self.attribute_embeddings = attribute_embeddings
-        self.relation_embeddings = relation_embeddings
+        self.object_annotation = object_annotation
 
     def scene(self) -> ObjectSet:
-        return torch.ones(self.object_features.shape[0], dtype=torch.float, device=self.object_features.device)
+        return torch.ones(self.object_annotation.num_objects, dtype=torch.float)
 
     def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
-        mask = self.attribute_embeddings.get_attribute(object_set @ self.object_features, attribute) # object_set has to be 1-hot tensor
+        idx_vector = torch.tensor(range(self.object_annotation.num_objects), dtype=torch.int)
+        object_idx = object_set.int().dot(idx_vector) # object_set has to be 1-hot tensor
+        mask = self.object_annotation.get_attribute(object_idx.item(), attribute)
         return mask
 
     def filter(self, object_set: ObjectSet, concept: str) -> ObjectSet:
-        mask = self.attribute_embeddings.similarity(self.object_features, concept)
+        mask = self.object_annotation.similarity(concept)
         output = torch.min(object_set, mask)
         return output
 

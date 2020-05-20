@@ -2,18 +2,24 @@ import torch.nn as nn
 
 from nscl.models.reasoning.reasoning_module import ReasoningModule
 from nscl.models.visual.visual_module import VisualModule
-
+from nscl.models.object_annotation import ObjectAnnotation
+from nscl.models.embedding.attribute_embedding_space import AttributeEmbeddingSpace
 
 class NSCLModule(nn.Module):
     def __init__(self, definitions, input_dim=256, embedding_dim=64):
         super().__init__()
+        self.definitions = definitions
         self.visual_module = VisualModule()
-        self.reasoning_module = ReasoningModule(definitions, input_dim, embedding_dim)
+        self.attribute_space = AttributeEmbeddingSpace(definitions, input_dim, embedding_dim)
+        self.reasoning_module = ReasoningModule()
 
     def forward(self, image, question, scene):
         batch_size = image.size(0)
         answers = []
         visual_features = self.visual_module(image, scene)
+        object_annotation = ObjectAnnotation(self.definitions, visual_features, self.attribute_space)
+
         for idx in range(batch_size):
-            answers.append(self.reasoning_module(visual_features[idx], None, question[idx]))
-        return answers
+            answers.append(self.reasoning_module(question[idx], object_annotation))
+
+        return object_annotation, answers
