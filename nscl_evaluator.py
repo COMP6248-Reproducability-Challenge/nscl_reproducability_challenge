@@ -9,15 +9,16 @@ from nscl.datasets.clevr_dataset import build_clevr_dataset, build_clevr_dataloa
 from nscl.datasets.clevr_definition import CLEVRDefinition, QuestionTypes
 from nscl.models.nscl_module import NSCLModule
 
-batch_size = 100
-num_workers = 4
+batch_size = 64
+num_workers = 0
 test_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/val'
 test_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/val/scenes.json'
 test_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_val_questions.json'
 
-test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json)
+test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json, max_scene_size=5,
+                                   max_program_size=5)
 test_loader = build_clevr_dataloader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False,
-                                     drop_last=False, max_scene_size=5, max_program_size=5)
+                                     drop_last=False)
 
 mse_loss = nn.MSELoss()
 bce_loss = nn.BCELoss()

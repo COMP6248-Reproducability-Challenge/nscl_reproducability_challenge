@@ -35,7 +35,7 @@ class CLEVRDataset(Dataset):
         try:
             img = self.img_transform(Image.open(osp.join(self.img_location, question.img_file)).convert('RGB'))
         except Exception as ex:
-            print(f'Unable to load image {question.img_file}')
+            print(f'Unable to load image {question.img_file} {ex}')
             img = None
         return img, question, scene
 
