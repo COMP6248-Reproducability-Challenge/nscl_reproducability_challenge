@@ -29,11 +29,12 @@ val_loader = build_clevr_dataloader(val_dataset, batch_size=batch_size, num_work
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
 epoch = 10
 model = NSCLModule(CLEVRDefinition.attribute_concept_map).to(device)
+# model.load_state_dict(torch.load('nscl.pt', map_location=torch.device(device)))
 mse_loss = nn.MSELoss()
 bce_loss = nn.BCELoss()
 ce_loss = nn.CrossEntropyLoss()
 
-opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
+opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.1)
 scheduler = StepLR(opt, step_size=5, gamma=0.1)
 
 for e in range(epoch):
@@ -51,7 +52,7 @@ for e in range(epoch):
                     loss = mse_loss(predicted_answer, true_answer)
                 elif q.question_type == QuestionTypes.BOOLEAN:
                     predicted_answer = torch.stack(
-                        [predicted_answer, torch.tensor(1 - predicted_answer.item(), device=device)])
+                        [predicted_answer, torch.tensor(1 - predicted_answer.item(), device=device, requires_grad=True)])
                     loss = bce_loss(predicted_answer, true_answer)
                 else:
                     predicted_answer = predicted_answer.unsqueeze(0)
@@ -92,68 +93,4 @@ for e in range(epoch):
                 t.update()
 
     scheduler.step()
-
-
-torch.save(model.state_dict(), 'nscl.pt')
-
-batch_size = 100
-num_workers = 4
-test_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/val'
-test_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/val/scenes.json'
-test_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_val_questions.json'
-
-test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json)
-test_loader = build_clevr_dataloader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False,
-                                     drop_last=False, max_scene_size=5, max_program_size=5)
-
-model.eval()
-correct = 0
-count = 0
-with tqdm(total=len(val_loader), desc='test') as t:
-    with torch.no_grad():
-        epoch_loss = 0
-        for idx, (images, questions, scenes) in enumerate(test_loader):
-            results = model(images.to(device), questions, scenes)
-            total_loss = torch.tensor(0.0, dtype=torch.float)
-            for i, q in enumerate(questions):
-                predicted_answer = results[i]
-                true_answer = q.answer_tensor.to(device)
-                if q.question_type == QuestionTypes.COUNT:
-                    loss = mse_loss(predicted_answer, true_answer)
-                    # print(q.raw_question)
-                    # print('True Answer', q.answer)
-                    # print('Predicted Answer', int(round(predicted_answer.item())))
-                    if int(round(predicted_answer.item())) == q.answer:
-                        correct += 1
-                elif q.question_type == QuestionTypes.BOOLEAN:
-                    predicted_answer = torch.stack(
-                        [predicted_answer, torch.tensor(1 - predicted_answer.item(), device=device)])
-                    loss = bce_loss(predicted_answer, true_answer)
-                    # print(q.raw_question)
-                    # print('True Answer', q.answer)
-                    ans = 'yes' if int(torch.argmax(predicted_answer).item()) == 0 else 'no'
-                    # print('Predicted Answer', ans)
-                    if ans == q.answer:
-                        correct += 1
-                else:
-                    predicted_answer = predicted_answer.unsqueeze(0)
-                    loss = ce_loss(predicted_answer, true_answer)
-                    # print(q.raw_question)
-                    # print('True Answer', q.answer)
-                    # print('True Answer id', q.answer_tensor.item())
-                    ans = torch.argmax(predicted_answer).item()
-                    # print('Predicted Answer', ans)
-                    if int(ans) == int(q.answer_tensor.item()):
-                        correct += 1
-
-                print()
-                count += 1
-                total_loss = total_loss + loss
-
-            epoch_loss = (epoch_loss * idx + total_loss.item()) / (idx + 1)
-            t.set_postfix(loss='{:05.3f}'.format(epoch_loss))
-            t.update()
-
-print('correct', correct)
-print('count', count)
-print('Test Accuracy', correct / count)
+    torch.save(model.state_dict(), f'nscl-{e}.pt')
