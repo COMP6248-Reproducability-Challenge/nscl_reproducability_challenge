@@ -11,7 +11,7 @@ class SceneParsingLoss(nn.Module):
     def forward(self, object_annotations, scenes):
         losses = []
         for object_annotation, scene in zip(object_annotations, scenes):
-            for i in range(object_annotation.num_objects):
+            for i in range(min(object_annotation.num_objects, len(scene.objects))):
                 obj = scene.objects[i]
                 actual_concepts = []
                 for attr in object_annotation.all_attributes:
