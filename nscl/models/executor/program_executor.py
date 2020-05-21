@@ -8,7 +8,7 @@ ObjectConcept = NewType('ObjectConcept', torch.FloatTensor)     # Probability of
 Bool = NewType('Bool', torch.FloatTensor)                       # Probability of yes
 Count = NewType('Count', torch.IntTensor)                       # Count(single-item tensor)
 
-class ProgramExecutor(object):
+class ProgramExecutor(torch.nn.Module):
 
     """
         object_features : 2D tensor containing visual features of all objects in the scene
@@ -26,11 +26,11 @@ class ProgramExecutor(object):
         self.object_annotation = object_annotation
 
     def scene(self) -> ObjectSet:
-        return torch.ones(self.object_annotation.num_objects, dtype=torch.float)
+        return torch.ones(self.object_annotation.num_objects, dtype=torch.float, device=self.object_annotation.device)
 
     def query(self, object_set: ObjectSet, attribute: str) -> ObjectConcept:
-        idx_vector = torch.tensor(range(self.object_annotation.num_objects), dtype=torch.int)
-        object_idx = object_set.int().dot(idx_vector) # object_set has to be 1-hot tensor
+        idx_vector = torch.tensor(range(self.object_annotation.num_objects), dtype=torch.int, device=self.object_annotation.device)
+        object_idx = (object_set.int() * idx_vector).sum() # object_set has to be 1-hot tensor
         mask = self.object_annotation.get_attribute(object_idx.item(), attribute)
         return mask
 
@@ -71,5 +71,3 @@ class ProgramExecutor(object):
 
     def count_equal(self, object_set: ObjectSet) -> Bool:
         raise NotImplementedError()
-
-

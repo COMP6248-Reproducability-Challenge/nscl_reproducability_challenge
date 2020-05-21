@@ -1,5 +1,6 @@
+import torch
 import torch.nn as nn
-import torch.nn.modules.loss
+
 from nscl.datasets.clevr_definition import QuestionTypes
 
 class SceneParsingLoss(nn.Module):
@@ -9,13 +10,12 @@ class SceneParsingLoss(nn.Module):
 
     def forward(self, object_annotation, scene):
         losses = []
-        for i in range(scene.objects):
+        for i in range(len(scene.objects)):
             obj = scene.objects[i]
             for attr in object_annotation.all_attributes:
                 actual_concept = getattr(obj, attr)
                 similarity = object_annotation.similarity(actual_concept)[i]
-                losses.append(1. - similarity)
-
+                losses.append(self.mse_loss(similarity))
         return torch.cat(losses).sum()
 
 class QALoss(nn.Module):

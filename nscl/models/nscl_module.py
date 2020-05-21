@@ -16,10 +16,12 @@ class NSCLModule(nn.Module):
     def forward(self, image, question, scene):
         batch_size = image.size(0)
         answers = []
+        object_annotations = []
         visual_features = self.visual_module(image, scene)
-        object_annotation = ObjectAnnotation(self.definitions, visual_features, self.attribute_space)
-
+         
         for idx in range(batch_size):
+            object_annotation = ObjectAnnotation(self.definitions, visual_features[idx], self.attribute_space)
             answers.append(self.reasoning_module(question[idx], object_annotation))
+            object_annotations.append(object_annotation)
 
-        return object_annotation, answers
+        return object_annotations, answers
