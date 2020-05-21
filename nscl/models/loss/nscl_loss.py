@@ -2,14 +2,9 @@ import torch.nn as nn
 import torch.nn.modules.loss
 from nscl.datasets.clevr_definition import QuestionTypes
 
-class LossFunction(nn.Module):
-    def __init__(self, reduction='mean'):
-        super(LossFunction, self).__init__()
-        self.reduction = reduction
-
 class SceneParsingLoss(nn.Module):
     def __init__(self,  reduction='mean'):
-        super(SceneParsingLoss, self).__init__(reduction)
+        super().__init__()
         self.mse_loss = nn.MSELoss(reduction=reduction)
 
     def forward(self, object_annotation, scene):
@@ -25,7 +20,7 @@ class SceneParsingLoss(nn.Module):
 
 class QALoss(nn.Module):
     def __init__(self,  reduction='mean'):
-        super(QALoss, self).__init__(reduction)
+        super().__init__()
         self.mse_loss = nn.MSELoss(reduction=reduction)
         self.bce_loss = nn.BCELoss(reduction=reduction)
         self.ce_loss = nn.CrossEntropyLoss(reduction=reduction)
