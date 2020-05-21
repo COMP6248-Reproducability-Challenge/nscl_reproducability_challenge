@@ -6,14 +6,12 @@ from nscl.models.executor.program_executor import ProgramExecutor
 
 
 class ReasoningModule(nn.Module):
-    def __init__(self, definitions, input_dim, embedding_dim):
+    def __init__(self):
         super().__init__()
-        self.attribute_space = AttributeEmbeddingSpace(definitions, input_dim, embedding_dim)
-        self.relation_space = RelationEmbeddingSpace()
 
-    def forward(self, visual_features, relation_features, question):
+    def forward(self, question, object_annotation):
         input_buffers = []
-        executor = ProgramExecutor(visual_features, relation_features, self.attribute_space, self.relation_space)
+        executor = ProgramExecutor(object_annotation)
         for p in question.program:
             inputs = []
             for input_id in p.input_ids:
