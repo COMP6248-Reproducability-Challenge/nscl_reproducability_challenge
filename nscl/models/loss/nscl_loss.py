@@ -8,14 +8,15 @@ class SceneParsingLoss(nn.Module):
         super().__init__()
         self.mse_loss = nn.MSELoss(reduction=reduction)
 
-    def forward(self, object_annotation, scene):
+    def forward(self, object_annotations, scenes):
         losses = []
-        for i in range(len(scene.objects)):
-            obj = scene.objects[i]
-            for attr in object_annotation.all_attributes:
-                actual_concept = getattr(obj, attr)
-                similarity = object_annotation.similarity(actual_concept)[i]
-                losses.append(self.mse_loss(similarity))
+        for object_annotation, scene in zip(object_annotations, scenes):
+            for i in range(len(scene.objects)):
+                obj = scene.objects[i]
+                for attr in object_annotation.all_attributes:
+                    actual_concept = getattr(obj, attr)
+                    similarity = object_annotation.similarity(actual_concept)[i]
+                    losses.append(self.mse_loss(similarity))
         return torch.cat(losses).sum()
 
 class QALoss(nn.Module):
