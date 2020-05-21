@@ -11,13 +11,18 @@ class SceneParsingLoss(nn.Module):
     def forward(self, object_annotations, scenes):
         losses = []
         for object_annotation, scene in zip(object_annotations, scenes):
-            for i in range(len(scene.objects)):
+            for i in range(object_annotation.num_objects):
                 obj = scene.objects[i]
+                actual_concepts = []
                 for attr in object_annotation.all_attributes:
-                    actual_concept = getattr(obj, attr)
-                    similarity = object_annotation.similarity(actual_concept)[i]
-                    losses.append(self.mse_loss(similarity))
-        return torch.cat(losses).sum()
+                    actual_concepts.append(getattr(obj, attr))
+
+                for c in object_annotation.all_concepts:
+                    similarity = object_annotation.similarity(c)[i]
+                    expected_similarity = torch.tensor(1., dtype=similarity.dtype, device=similarity.device) if c in actual_concepts else torch.tensor(0., dtype=similarity.dtype, device=similarity.device)
+                    losses.append(self.mse_loss(similarity, expected_similarity))
+                
+        return torch.stack(losses).sum()
 
 class QALoss(nn.Module):
     def __init__(self,  reduction='mean'):
@@ -41,6 +46,6 @@ class QALoss(nn.Module):
                 loss_function = self.ce_loss
                 predict = predict.unsqueeze(0)
             
-            losses.append(loss_function(predict, actual).unsqueeze(0))
+            losses.append(loss_function(predict, actual))
 
-        return torch.cat(losses).sum()
+        return torch.stack(losses).sum()
