@@ -50,24 +50,27 @@ class AttributeEmbeddingSpace(nn.Module):
                         [.., .., .., ..], //obj_2 features
                         ...
                     ]
-        concept : concept to filter(red, green, large ....)
+        return : 3D tensor representing the objects in all embedding space
+    """
+    def map_to_embeddings(self, object_features: torch.Tensor):
+        all_operators = [getattr(self.attribute_operators, attr) for attr in self.all_attributes]
+        object_embeddings = torch.stack([operator(object_features) for operator in all_operators], dim=-1)
+        object_embeddings = object_embeddings / object_embeddings.norm(p=2, dim=-1, keepdim=True)
+        return object_embeddings
 
+    """
+        object_embeddings : 3D tensor representing the objects in all embedding space
+        concept : concept to filter(red, green, large ....)
         return : 1D tensor representing the probability of each object has a given concept
     """
-
-    def similarity(self, object_features: torch.Tensor, concept: str) -> torch.Tensor:
-        all_operators = [getattr(self.attribute_operators, attr) for attr in self.all_attributes]
-        object_embeddings = torch.stack([operator(object_features) for operator in all_operators],
-                                        dim=-1)  # Map features to all spaces
-        object_embeddings = object_embeddings / object_embeddings.norm(p=2, dim=-1, keepdim=True)
-
+    def similarity(self, object_embeddings: torch.Tensor, concept: str) -> torch.Tensor:
         concept_embedding = getattr(self.concept_embeddings, concept)
         concept_vector = concept_embedding.concept_vector / concept_embedding.concept_vector.norm(p=2)
         concept_vector = torch.stack([concept_vector for i in range(len(self.all_attributes))],
                                      dim=-1) # Extend dimension so it can be broadcasted
         cosine_sim = ((object_embeddings * concept_vector).sum(dim=-2) - self.margin) / self.tau
 
-        belong_vector = concept_embedding.belong_vector.to(object_features.device)
+        belong_vector = concept_embedding.belong_vector.to(object_embeddings.device)
         similarity = (belong_vector * cosine_sim).sum(dim=-1)  # Remove irrelevant attribute
         logits = torch.sigmoid(similarity)
         return logits
@@ -75,9 +78,8 @@ class AttributeEmbeddingSpace(nn.Module):
     """
         return : 1D tensor representing the propbability of an object belonging to each concept in attribute
     """
-
-    def get_attribute(self, object_feature: torch.Tensor, attribute: str) -> torch.Tensor:
+    def get_attribute(self, object_embedding: torch.Tensor, attribute: str) -> torch.Tensor:
         all_concepts = self.attribute_concept_map[attribute]
-        all_concept_pr = torch.cat([self.similarity(object_feature.unsqueeze(0), c) for c in all_concepts])
+        all_concept_pr = torch.cat([self.similarity(object_embedding.unsqueeze(0), c) for c in all_concepts])
         all_concept_pr = all_concept_pr / all_concept_pr.sum(dim=-1)
         return all_concept_pr
