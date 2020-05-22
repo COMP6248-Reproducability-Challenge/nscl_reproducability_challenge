@@ -25,26 +25,29 @@ class SceneParsingLoss(nn.Module):
         return torch.stack(losses).sum()
 
 class CESceneParsingLoss(nn.Module):
-    def __init__(self,  reduction='mean'):
+    def __init__(self, definitions, reduction='mean'):
         super().__init__()
         self.ce_loss = nn.CrossEntropyLoss(reduction=reduction)
+        self.definitions = definitions
+
+    def get_targets(self, scene, attr):
+        targets = [torch.tensor(self.definitions[attr].index(getattr(obj, attr))) for obj in scene.objects]
+        return torch.stack(targets)
+
+    def get_predictions(self, object_annotation, attr):
+        predictions = [object_annotation.similarity(concept) for concept in self.definitions[attr]]
+        return torch.stack(predictions).t()
+
+    def compute_loss(self, object_annotation, scene):
+        losses = []
+        for attr in self.definitions.keys():
+            targets = self.get_targets(scene, attr)
+            predictions = self.get_predictions(object_annotation, attr)
+            losses.append(self.ce_loss(predictions, targets))
+        return torch.stack(losses).sum()
 
     def forward(self, object_annotations, scenes):
-        losses = []
-        for object_annotation, scene in zip(object_annotations, scenes):
-            for attr, concetps in object_annotation.definitions.items():
-                all_obj_similarities = []
-                all_obj_targets = []
-                for i in range(min(object_annotation.num_objects, len(scene.objects))):
-                    similarities = torch.stack([object_annotation.similarity(c)[i] for c in concetps])
-                    target = torch.tensor(concetps.index(getattr(scene.objects[i], attr)), dtype=torch.long, device=similarities.device)
-                    all_obj_similarities.append(similarities)
-                    all_obj_targets.append(target)
-                
-                all_obj_similarities = torch.stack(all_obj_similarities)
-                all_obj_targets = torch.stack(all_obj_targets)
-                losses.append(self.ce_loss(all_obj_similarities, all_obj_targets))
-                
+        losses = [self.compute_loss(a, s) for a, s in zip(object_annotations, scenes)]
         return torch.stack(losses).sum()
 
 class QALoss(nn.Module):
