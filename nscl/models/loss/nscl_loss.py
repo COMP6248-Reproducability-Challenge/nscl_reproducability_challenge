@@ -24,6 +24,29 @@ class SceneParsingLoss(nn.Module):
                 
         return torch.stack(losses).sum()
 
+class CESceneParsingLoss(nn.Module):
+    def __init__(self,  reduction='mean'):
+        super().__init__()
+        self.ce_loss = nn.CrossEntropyLoss(reduction=reduction)
+
+    def forward(self, object_annotations, scenes):
+        losses = []
+        for object_annotation, scene in zip(object_annotations, scenes):
+            for attr, concetps in object_annotation.definitions.items():
+                all_obj_similarities = []
+                all_obj_targets = []
+                for i in range(min(object_annotation.num_objects, len(scene.objects))):
+                    similarities = torch.stack([object_annotation.similarity(c)[i] for c in concetps])
+                    target = torch.tensor(concetps.index(getattr(scene.objects[i], attr)), dtype=torch.long, device=similarities.device)
+                    all_obj_similarities.append(similarities)
+                    all_obj_targets.append(target)
+                
+                all_obj_similarities = torch.stack(all_obj_similarities)
+                all_obj_targets = torch.stack(all_obj_targets)
+                losses.append(self.ce_loss(all_obj_similarities, all_obj_targets))
+                
+        return torch.stack(losses).sum()
+
 class QALoss(nn.Module):
     def __init__(self,  reduction='mean'):
         super().__init__()

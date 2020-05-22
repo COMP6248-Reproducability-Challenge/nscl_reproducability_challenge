@@ -2,6 +2,7 @@ class ObjectAnnotation(object):
 
     def __init__(self, definitions, object_features, attribute_embedding):
         super().__init__()
+        self.definitions = definitions
         self.device = object_features.device
         self.all_concepts = [c for concepts in definitions.values() for c in concepts]
         self.all_attributes = definitions.keys()
