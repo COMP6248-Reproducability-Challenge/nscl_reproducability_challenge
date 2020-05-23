@@ -41,14 +41,17 @@ class CESceneParsingLoss(nn.Module):
     def compute_loss(self, object_annotation, scene):
         losses = []
         for attr in self.definitions.keys():
-            if len(scene.objects) != object_annotation.num_objects: continue
             targets = self.get_targets(scene, attr)
             predictions = self.get_predictions(object_annotation, attr)
-            losses.append(self.ce_loss(predictions, targets))
+            losses.append(self.ce_loss(predictions, targets.to(predictions.device)))
         return torch.stack(losses).sum()
 
     def forward(self, object_annotations, scenes):
-        losses = [self.compute_loss(a, s) for a, s in zip(object_annotations, scenes)]
+        losses = []
+        for a, s in zip(object_annotations, scenes):
+            if len(s.objects) != a.num_objects: continue
+            losses.append(self.compute_loss(a, s))
+
         return torch.stack(losses).sum()
 
 class QALoss(nn.Module):
