@@ -54,7 +54,6 @@ class CESceneParsingLoss(nn.Module):
         losses = []
         for a, s in zip(object_annotations, scenes):
             if len(s.rearranged_objects) != a.num_objects:
-                print('not equal')
                 continue
             losses.append(self.compute_loss(a, s))
 
