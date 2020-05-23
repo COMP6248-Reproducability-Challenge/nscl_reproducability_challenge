@@ -41,6 +41,7 @@ class CESceneParsingLoss(nn.Module):
     def compute_loss(self, object_annotation, scene):
         losses = []
         for attr in self.definitions.keys():
+            if len(scene.objects) != object_annotation.num_objects: continue
             targets = self.get_targets(scene, attr)
             predictions = self.get_predictions(object_annotation, attr)
             losses.append(self.ce_loss(predictions, targets))
