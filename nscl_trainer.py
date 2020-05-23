@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from nscl.datasets.clevr_dataset import build_clevr_dataset, build_clevr_dataloader
 from nscl.datasets.clevr_definition import CLEVRDefinition
-from nscl.models.loss.nscl_loss import SceneParsingLoss, QALoss
+from nscl.models.loss.nscl_loss import QALoss, CESceneParsingLoss
 from nscl.models.nscl_module import NSCLModule
 
 wandb.init(project="nscl-reproduce")
@@ -20,7 +20,7 @@ train_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/train'
 train_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/train/scenes.json'
 train_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_train_questions.json'
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 # Epoch, max_program_size, max_scene_size
 curriculum_strategies = [
@@ -38,7 +38,7 @@ model = NSCLModule(CLEVRDefinition.attribute_concept_map).to(device)
 wandb.watch(model)
 # model.load_state_dict(torch.load('nscl.pt', map_location=torch.device(device)))
 
-scene_parsing_loss = SceneParsingLoss(reduction='sum')
+scene_parsing_loss = CESceneParsingLoss(CLEVRDefinition.attribute_concept_map, reduction='sum')
 qa_loss = QALoss(reduction='sum')
 
 opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
@@ -56,8 +56,8 @@ for epoch, max_program_size, max_scene_size in curriculum_strategies:
 
     for e in range(epoch):
         model.train()
+        epoch_loss = 0
         with tqdm(total=len(train_loader), desc='train') as t:
-            epoch_loss = 0
             for idx, (images, questions, scenes) in enumerate(train_loader):
                 opt.zero_grad()
                 object_annotations, answers = model(images.to(device), questions, scenes)
@@ -74,9 +74,9 @@ for epoch, max_program_size, max_scene_size in curriculum_strategies:
                 t.update()
 
         model.eval()
+        epoch_loss = 0
         with tqdm(total=len(val_loader), desc='val') as t:
             with torch.no_grad():
-                epoch_loss = 0
                 for idx, (images, questions, scenes) in enumerate(val_loader):
                     object_annotations, answers = model(images.to(device), questions, scenes)
                     scene_loss = scene_parsing_loss(object_annotations, scenes)

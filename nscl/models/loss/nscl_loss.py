@@ -3,8 +3,9 @@ import torch.nn as nn
 
 from nscl.datasets.clevr_definition import QuestionTypes
 
+
 class SceneParsingLoss(nn.Module):
-    def __init__(self,  reduction='mean'):
+    def __init__(self, reduction='mean'):
         super().__init__()
         self.mse_loss = nn.MSELoss(reduction=reduction)
 
@@ -19,10 +20,13 @@ class SceneParsingLoss(nn.Module):
 
                 for c in object_annotation.all_concepts:
                     similarity = object_annotation.similarity(c)[i]
-                    expected_similarity = torch.tensor(1., dtype=similarity.dtype, device=similarity.device) if c in actual_concepts else torch.tensor(0., dtype=similarity.dtype, device=similarity.device)
+                    expected_similarity = torch.tensor(1., dtype=similarity.dtype,
+                                                       device=similarity.device) if c in actual_concepts else torch.tensor(
+                        0., dtype=similarity.dtype, device=similarity.device)
                     losses.append(self.mse_loss(similarity, expected_similarity))
-                
+
         return torch.stack(losses).sum()
+
 
 class CESceneParsingLoss(nn.Module):
     def __init__(self, definitions, reduction='mean'):
@@ -31,7 +35,7 @@ class CESceneParsingLoss(nn.Module):
         self.definitions = definitions
 
     def get_targets(self, scene, attr):
-        targets = [torch.tensor(self.definitions[attr].index(getattr(obj, attr))) for obj in scene.objects]
+        targets = [torch.tensor(self.definitions[attr].index(getattr(obj, attr))) for obj in scene.rearranged_objects]
         return torch.stack(targets)
 
     def get_predictions(self, object_annotation, attr):
@@ -49,13 +53,16 @@ class CESceneParsingLoss(nn.Module):
     def forward(self, object_annotations, scenes):
         losses = []
         for a, s in zip(object_annotations, scenes):
-            if len(s.objects) != a.num_objects: continue
+            if len(s.rearranged_objects) != a.num_objects:
+                print('not equal')
+                continue
             losses.append(self.compute_loss(a, s))
 
         return torch.stack(losses).sum()
 
+
 class QALoss(nn.Module):
-    def __init__(self,  reduction='mean'):
+    def __init__(self, reduction='mean'):
         super().__init__()
         self.mse_loss = nn.MSELoss(reduction=reduction)
         self.bce_loss = nn.BCELoss(reduction=reduction)
@@ -75,7 +82,7 @@ class QALoss(nn.Module):
             else:
                 loss_function = self.ce_loss
                 predict = predict.unsqueeze(0)
-            
+
             losses.append(loss_function(predict, actual))
 
         return torch.stack(losses).sum()

@@ -14,14 +14,14 @@ test_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/val'
 test_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/val/scenes.json'
 test_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_val_questions.json'
 
-test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json, max_scene_size=5,
-                                   max_program_size=5)
+test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json, max_scene_size=3,
+                                   max_program_size=3)
 test_loader = build_clevr_dataloader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False,
                                      drop_last=False)
 
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
 model = NSCLModule(CLEVRDefinition.attribute_concept_map).to(device)
-# model.load_state_dict(torch.load('nscl.pt', map_location=torch.device(device)))
+model.load_state_dict(torch.load('nscl-5.pt', map_location=torch.device(device)))
 model.eval()
 
 correct = 0
