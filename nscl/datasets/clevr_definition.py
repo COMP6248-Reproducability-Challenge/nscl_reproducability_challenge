@@ -11,6 +11,24 @@ class CLEVRDefinition(object):
         'size': ['small', 'large']
     }
 
+    concept_attribute_map = {
+        'gray': 'color',
+        'red': 'color',
+        'blue': 'color',
+        'green': 'color',
+        'brown': 'color',
+        'purple': 'color',
+        'cyan': 'color',
+        'yellow': 'color',
+        'rubber': 'material',
+        'metal': 'material',
+        'cube': 'shape',
+        'sphere': 'shape',
+        'cylinder': 'shape',
+        'small': 'size',
+        'large': 'size'
+    }
+
     relation_concept_map = {
         'spatial': ['left', 'right', 'front', 'behind']
     }

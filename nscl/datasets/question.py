@@ -18,6 +18,7 @@ class Question(object):
         self.program = Question.get_program_seq(json['program'])
         self.answer_tensor = Question.get_answer_tensor(self.answer)
         self.question_type = Question.get_question_type(self.answer)
+        self.synthetic = False
 
     @staticmethod
     def get_program_seq(programs_json):
