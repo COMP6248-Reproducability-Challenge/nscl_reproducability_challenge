@@ -31,7 +31,7 @@ class CLEVRDataset(Dataset):
             self.questions = CLEVRDataset.filter_questions(self.questions, self.scenes, max_program_size, max_scene_size)
         
         if gen_similar_questions:
-            new_questions = [CLEVRDataset.generate_similar_questions(q, self.scenes[q.img_index]) for q in self.questions if len(q.program) > 2]
+            new_questions = [CLEVRDataset.generate_similar_questions(q, self.scenes[q.img_index]) for q in self.questions]
             new_questions = [q for questions in new_questions for q in questions]
             self.questions = self.questions + new_questions
 
@@ -63,10 +63,12 @@ class CLEVRDataset(Dataset):
         return filtered_questions
 
     @staticmethod
-    def generate_similar_questions( q, scene):
+    def generate_similar_questions(q, scene):
         question_type = q.program[-1].operator
-        if question_type == 'count' or question_type == 'exist':
+        if question_type == 'count' or question_type == 'exist' and len(q.program) <= 3:
             return CLEVRDataset.generate_similar_count_or_exist_questions(q, scene)
+        elif question_type == 'query' and len(q.program) <= 4:
+            return CLEVRDataset.generate_similar_query_questions(q, scene)
         else:
             return []
 
@@ -83,6 +85,24 @@ class CLEVRDataset(Dataset):
             new_question.synthetic = True
             new_questions.append(new_question)
         return new_questions
+
+    @staticmethod
+    def generate_similar_query_questions(q, scene):
+        new_questions = []
+        filter_program = [p for p in q.program if p.operator == 'filter'][0]
+        filter_attr, filter_concept = filter_program.attribute, filter_program.concept
+        object_to_query = CLEVRDataset.filter_objects_by_concept(scene, filter_concept)[0]
+        for attr in CLEVRDefinition.get_all_attributes():
+            if attr == q.program[-1].attribute or attr == filter_attr: continue
+            new_question = copy.deepcopy(q)
+            new_question.raw_question = new_question.raw_question.replace(q.program[-1].attribute, attr)
+            new_question.program[-1].attribute = attr
+            new_question.answer = getattr(object_to_query, attr)
+            new_question.answer_tensor = Question.get_answer_tensor(new_question.answer)
+            new_question.synthetic = True
+            new_questions.append(new_question)
+        return new_questions
+
 
     @staticmethod
     def modify_filter(q, new_concept):
