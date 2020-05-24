@@ -21,7 +21,7 @@ questions_json = os.path.abspath(os.getcwd()) + '/data/test/train_questions.json
 trans = transforms.Compose([
     transforms.ToTensor(),
 ])
-dataset = build_clevr_dataset(img_root, scene_json, questions_json, trans)
+dataset = build_clevr_dataset(img_root, scene_json, questions_json, img_transform=trans)
 img, question, scene = dataset[0]
 boxes = [mask_utils.toBbox(i['mask']) for i in scene.detection]
 fig, ax = plt.subplots(1)

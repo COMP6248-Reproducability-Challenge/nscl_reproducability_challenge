@@ -20,8 +20,16 @@ class Scene(object):
         self.detection = json['objects_detection'] if 'objects_detection' in json else json['objects']
 
         # change box positions to be the same scale as transformed CLEVR image
-        self.boxes = torch.tensor(transform_bbox(np.array([mask_utils.toBbox(d['mask']) for d in self.detection]), 0.8),
-                                  dtype=torch.float32)
+        bbox = [mask_utils.toBbox(d['mask']) for d in self.detection]
+        self.boxes = torch.tensor(transform_bbox(np.array(bbox), 0.8), dtype=torch.float32)
+
+        # Rearrange and filter objects based on detected boxes
+        self.rearranged_objects = []
+        for x, y, width, height in bbox:
+            obj = next((obj for obj in self.objects if x < obj.coordinates[0] < x + width
+                        and y < obj.coordinates[1] < y + height), None)
+            if obj is not None:
+                self.rearranged_objects.append(obj)
 
     @staticmethod
     def get_objects(objects_json):
