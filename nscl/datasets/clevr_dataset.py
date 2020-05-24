@@ -65,9 +65,9 @@ class CLEVRDataset(Dataset):
     @staticmethod
     def generate_similar_questions(q, scene):
         question_type = q.program[-1].operator
-        if question_type == 'count' or question_type == 'exist' and len(q.program) <= 3:
+        if (question_type == 'count' or question_type == 'exist') and len(q.program) == 3:
             return CLEVRDataset.generate_similar_count_or_exist_questions(q, scene)
-        elif question_type == 'query' and len(q.program) <= 4:
+        elif question_type == 'query' and len(q.program) == 4:
             return CLEVRDataset.generate_similar_query_questions(q, scene)
         else:
             return []
