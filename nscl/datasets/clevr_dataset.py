@@ -20,9 +20,7 @@ class CLEVRDataset(Dataset):
         super().__init__()
 
         self.img_location = img_root
-        print(f'loading scenes from: {scene_json}')
         self.raw_scenes = json.load(open(scene_json))['scenes']
-        print(f'loading questions from: {questions_json}')
         self.raw_questions = json.load(open(questions_json))['questions']
         self.img_transform = img_transform
         self.questions = [Question(q) for q in self.raw_questions]
