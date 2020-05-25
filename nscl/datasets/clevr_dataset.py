@@ -25,7 +25,7 @@ class CLEVRDataset(Dataset):
         self.img_transform = img_transform
         self.questions = [Question(q) for q in self.raw_questions]
         self.scenes = [Scene(s) for s in self.raw_scenes]
-        if max_program_size is not None and max_program_size is not None:
+        if max_program_size is not None and max_scene_size is not None:
             self.questions = CLEVRDataset.filter_questions(self.questions, self.scenes, max_program_size, max_scene_size)
         
         if gen_similar_questions:
