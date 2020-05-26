@@ -48,6 +48,44 @@ class Question(object):
 
         return QuestionTypes.ATTRIBUTE
 
+    @staticmethod
+    def gen_empty_question():
+        json = dict()
+        json['image_index'] = None
+        json['image_filename'] = None
+        json['question_index'] = None
+        json['question_family_index'] = None
+        json['split'] = None
+        json['answer'] = 'yes'
+        json['question'] = None
+        json['program'] = []
+        q = Question(json)
+        scene_program = Program.gen_scene_program()
+        q.program.append(scene_program)
+        return q
+
+    @staticmethod
+    def gen_count_question(concept):
+        q = Question.gen_empty_question()
+        q.raw_question = f'How many {concept} things are there?'
+        filter_program = Program.gen_filter_program(CLEVRDefinition.concept_attribute_map[concept], concept)
+        filter_program.input_ids.append(0)
+        count_program = Program.gen_count_program()
+        count_program.input_ids.append(1)
+        q.program.extend([filter_program, count_program])
+        return q
+
+    @staticmethod
+    def gen_exist_question(concept):
+        q = Question.gen_empty_question()
+        q.raw_question = f'Is there a {concept} object?'
+        filter_program = Program.gen_filter_program(CLEVRDefinition.concept_attribute_map[concept], concept)
+        filter_program.input_ids.append(0)
+        exist_program = Program.gen_exist_program()
+        exist_program.input_ids.append(1)
+        q.program.extend([filter_program, exist_program])
+        return q
+
 
 class Program(object):
     def __init__(self, json):
@@ -98,6 +136,37 @@ class Program(object):
             else:
                 raise ValueError('Unknown CLEVR operation: {}.'.format(function))
 
+    @staticmethod
+    def gen_scene_program():
+        json = dict()
+        json['inputs'] = []
+        json['function'] = 'scene'
+        json['value_inputs'] = []
+        return Program(json)
+
+    @staticmethod
+    def gen_count_program():
+        json = dict()
+        json['inputs'] = []
+        json['function'] = 'count'
+        json['value_inputs'] = []
+        return Program(json)
+
+    @staticmethod
+    def gen_exist_program():
+        json = dict()
+        json['inputs'] = []
+        json['function'] = 'exist'
+        json['value_inputs'] = []
+        return Program(json)
+
+    @staticmethod
+    def gen_filter_program(attr, concept):
+        json = dict()
+        json['inputs'] = []
+        json['function'] = f'filter_{attr}'
+        json['value_inputs'] = [concept]
+        return Program(json)
 
 def get_function_operation(function):
     return function.split('_')[0]
