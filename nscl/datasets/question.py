@@ -60,6 +60,7 @@ class Question(object):
         json['question'] = None
         json['program'] = []
         q = Question(json)
+        q.synthetic = True
         scene_program = Program.gen_scene_program()
         q.program.append(scene_program)
         return q
