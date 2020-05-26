@@ -16,7 +16,7 @@ __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader', 'CLE
 
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False):
+    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False, gen_basic_scene_questions=False):
         super().__init__()
 
         self.img_location = img_root
@@ -32,6 +32,10 @@ class CLEVRDataset(Dataset):
             new_questions = [CLEVRDataset.generate_similar_questions(q, self.scenes[q.img_index]) for q in self.questions]
             new_questions = [q for questions in new_questions for q in questions]
             self.questions = self.questions + new_questions
+
+        if gen_basic_scene_questions:
+            basic_questions = [CLEVRDataset.generate_basic_scene_questions(s) for s in self.scenes]
+            self.questions = self.questions + basic_questions
 
     def __getitem__(self, index):
         question = self.questions[index]
@@ -70,6 +74,23 @@ class CLEVRDataset(Dataset):
         else:
             return []
 
+    @staticmethod
+    def generate_basic_scene_questions(scene):
+        basic_questions = []
+        for c in CLEVRDefinition.get_all_concepts():
+            count_question = Question.gen_count_question(c)
+            count_answer = str(len(CLEVRDataset.filter_objects_by_concept(scene, c)))
+            count_question.answer = count_answer
+            count_question.answer_tensor = Question.get_answer_tensor(count_answer)
+
+            exist_question = Question.gen_exist_question(c)
+            exist_answer = 'yes' if len(CLEVRDataset.filter_objects_by_concept(scene, c)) > 0 else 'no'
+            exist_question.answer = exist_answer
+            exist_question.answer_tensor = Question.get_answer_tensor(exist_answer)
+
+            basic_questions.extend([count_question, exist_question])
+
+        return basic_questions
 
     @staticmethod
     def generate_similar_count_or_exist_questions(q, scene):
