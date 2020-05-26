@@ -16,7 +16,7 @@ __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader', 'CLE
 
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False, gen_basic_scene_questions=False):
+    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False):
         super().__init__()
 
         self.img_location = img_root
@@ -30,7 +30,7 @@ class CLEVRDataset(Dataset):
         
         basic_scene_questions = []
 
-        if gen_similar_questions or gen_basic_scene_questions:
+        if gen_similar_questions:
             basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(self.scenes[q.img_index]) for q in self.questions]
             basic_scene_questions = [q for questions in basic_scene_questions for q in questions]
         
@@ -83,6 +83,7 @@ class CLEVRDataset(Dataset):
             count_answer = str(len(CLEVRDataset.filter_objects_by_concept(scene, c)))
             count_question.answer = count_answer
             count_question.answer_tensor = Question.get_answer_tensor(count_answer)
+            count_question.question_type = Question.get_question_type(count_answer)
 
             exist_question = Question.gen_exist_question(c)
             exist_question.img_index = scene.img_index
@@ -90,6 +91,7 @@ class CLEVRDataset(Dataset):
             exist_answer = 'yes' if len(CLEVRDataset.filter_objects_by_concept(scene, c)) > 0 else 'no'
             exist_question.answer = exist_answer
             exist_question.answer_tensor = Question.get_answer_tensor(exist_answer)
+            count_question.question_type = Question.get_question_type(count_answer)
 
             basic_questions.extend([count_question, exist_question])
 
