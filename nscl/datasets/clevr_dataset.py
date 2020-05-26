@@ -28,14 +28,13 @@ class CLEVRDataset(Dataset):
         if max_program_size is not None and max_scene_size is not None:
             self.questions = CLEVRDataset.filter_questions(self.questions, self.scenes, max_program_size, max_scene_size)
         
-        if gen_similar_questions:
-            new_questions = [CLEVRDataset.generate_similar_questions(q, self.scenes[q.img_index]) for q in self.questions]
-            new_questions = [q for questions in new_questions for q in questions]
-            self.questions = self.questions + new_questions
+        basic_scene_questions = []
 
-        if gen_basic_scene_questions:
-            basic_questions = [CLEVRDataset.generate_basic_scene_questions(s) for s in self.scenes]
-            self.questions = self.questions + basic_questions
+        if gen_similar_questions or gen_basic_scene_questions:
+            basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(self.scenes[q.img_index]) for q in self.questions]
+            basic_scene_questions = [q for questions in basic_scene_questions for q in questions]
+        
+        self.questions.extend(basic_scene_questions)
 
     def __getitem__(self, index):
         question = self.questions[index]
@@ -79,11 +78,15 @@ class CLEVRDataset(Dataset):
         basic_questions = []
         for c in CLEVRDefinition.get_all_concepts():
             count_question = Question.gen_count_question(c)
+            count_question.img_index = scene.img_index
+            count_question.img_file = scene.img_filename
             count_answer = str(len(CLEVRDataset.filter_objects_by_concept(scene, c)))
             count_question.answer = count_answer
             count_question.answer_tensor = Question.get_answer_tensor(count_answer)
 
             exist_question = Question.gen_exist_question(c)
+            exist_question.img_index = scene.img_index
+            exist_question.img_file = scene.img_filename
             exist_answer = 'yes' if len(CLEVRDataset.filter_objects_by_concept(scene, c)) > 0 else 'no'
             exist_question.answer = exist_answer
             exist_question.answer_tensor = Question.get_answer_tensor(exist_answer)
