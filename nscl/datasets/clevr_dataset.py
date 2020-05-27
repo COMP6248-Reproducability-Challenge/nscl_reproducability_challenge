@@ -30,7 +30,7 @@ class CLEVRDataset(Dataset):
         
         basic_scene_questions = []
 
-        if gen_basic_scene_questions:
+        if gen_basic_scene_questions and max_scene_size is not None:
             basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(s, num_questions_per_scene) for s in self.scenes if len(s.objects) <= max_scene_size]
             basic_scene_questions = [q for questions in basic_scene_questions for q in questions]
         
