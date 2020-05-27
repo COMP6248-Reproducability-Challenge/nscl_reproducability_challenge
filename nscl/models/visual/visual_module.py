@@ -3,8 +3,6 @@ from torch import nn
 from torchvision.models import resnet34
 from torchvision.ops import RoIAlign
 
-from nscl.models.visual.functional import normalize
-
 __all__ = ['VisualModule']
 
 
@@ -26,13 +24,6 @@ class VisualModule(nn.Module):
 
         self.resnet = resnet34(pretrained=True)
         self.resnet_feature_extractor = nn.Sequential(*list(self.resnet.children())[:-3])
-
-        # # disable training resnet for now
-        # for param in self.resnet_feature_extractor.parameters():
-        #     param.requires_grad = False
-        #
-        # # Confirm if we need this?
-        # self.resnet_feature_extractor.eval()
 
     def forward(self, images, scenes):
         outputs = []
@@ -62,3 +53,7 @@ class VisualModule(nn.Module):
             outputs.append(normalize(self.object_feature_fc(this_object_features.view(box_feature.size(0), -1))))
 
         return outputs
+
+
+def normalize(x):
+    return x / x.norm(2, dim=-1, keepdim=True)
