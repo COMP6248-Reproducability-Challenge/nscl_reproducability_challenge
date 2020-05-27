@@ -10,13 +10,13 @@ from nscl.datasets.question import Question
 from nscl.datasets.scene import Scene
 from nscl.datasets.clevr_definition import CLEVRDefinition
 import copy
+import random
 
 __all__ = ['CLEVRDataset', 'build_clevr_dataset', 'build_clevr_dataloader', 'CLEVRCurriculumSampler']
 
-
 class CLEVRDataset(Dataset):
 
-    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False):
+    def __init__(self, img_root, scene_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_basic_scene_questions=False, num_questions_per_scene=20):
         super().__init__()
 
         self.img_location = img_root
@@ -28,10 +28,13 @@ class CLEVRDataset(Dataset):
         if max_program_size is not None and max_scene_size is not None:
             self.questions = CLEVRDataset.filter_questions(self.questions, self.scenes, max_program_size, max_scene_size)
         
-        if gen_similar_questions:
-            new_questions = [CLEVRDataset.generate_similar_questions(q, self.scenes[q.img_index]) for q in self.questions]
-            new_questions = [q for questions in new_questions for q in questions]
-            self.questions = self.questions + new_questions
+        basic_scene_questions = []
+
+        if gen_basic_scene_questions and max_scene_size is not None:
+            basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(s, num_questions_per_scene) for s in self.scenes if len(s.objects) <= max_scene_size]
+            basic_scene_questions = [q for questions in basic_scene_questions for q in questions]
+        
+        self.questions.extend(basic_scene_questions)
 
     def __getitem__(self, index):
         question = self.questions[index]
@@ -70,6 +73,30 @@ class CLEVRDataset(Dataset):
         else:
             return []
 
+    @staticmethod
+    def generate_basic_scene_questions(scene, num_questions):
+        basic_questions = []
+        for c in CLEVRDefinition.get_all_concepts():
+            count_question = Question.gen_count_question(c)
+            count_question.img_index = scene.img_index
+            count_question.img_file = scene.img_filename
+            count_answer = str(len(CLEVRDataset.filter_objects_by_concept(scene, c)))
+            count_question.answer = count_answer
+            count_question.answer_tensor = Question.get_answer_tensor(count_answer)
+            count_question.question_type = Question.get_question_type(count_answer)
+
+            exist_question = Question.gen_exist_question(c)
+            exist_question.img_index = scene.img_index
+            exist_question.img_file = scene.img_filename
+            exist_answer = 'yes' if len(CLEVRDataset.filter_objects_by_concept(scene, c)) > 0 else 'no'
+            exist_question.answer = exist_answer
+            exist_question.answer_tensor = Question.get_answer_tensor(exist_answer)
+            count_question.question_type = Question.get_question_type(count_answer)
+
+            basic_questions.extend([count_question, exist_question])
+
+        random.shuffle(basic_questions)
+        return basic_questions[0:min(num_questions, len(basic_questions))]
 
     @staticmethod
     def generate_similar_count_or_exist_questions(q, scene):
@@ -115,7 +142,7 @@ class CLEVRDataset(Dataset):
     def filter_objects_by_concept(scene, concept):
         return [obj for obj in scene.objects if getattr(obj, CLEVRDefinition.concept_attribute_map[concept]) == concept]
 
-def build_clevr_dataset(img_root, scenes_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_similar_questions=False):
+def build_clevr_dataset(img_root, scenes_json, questions_json, max_program_size=None, max_scene_size=None, img_transform=None, gen_basic_scene_questions=False):
     # transform for resnet model
     if img_transform is None:
         img_transform = transforms.Compose([
@@ -124,7 +151,7 @@ def build_clevr_dataset(img_root, scenes_json, questions_json, max_program_size=
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
-    return CLEVRDataset(img_root, scenes_json, questions_json, max_program_size, max_scene_size, img_transform, gen_similar_questions)
+    return CLEVRDataset(img_root, scenes_json, questions_json, max_program_size, max_scene_size, img_transform, gen_basic_scene_questions)
 
 
 def build_clevr_dataloader(dataset, batch_size, num_workers, shuffle, drop_last, sampler=None):
