@@ -14,9 +14,8 @@ test_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/val'
 test_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/val/scenes.json'
 test_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_val_questions.json'
 
-# lesson 1: max_scene_size = 3, max_program_size = 8
-test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json, max_scene_size=5,
-                                   max_program_size=5, filter_non_equal_obj=True)
+test_dataset = build_clevr_dataset(test_img_root, test_scene_json, test_question_json, max_scene_size=3,
+                                   max_program_size=4, filter_non_equal_obj=True)
 test_loader = build_clevr_dataloader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False,
                                      drop_last=False)
 
@@ -40,6 +39,8 @@ with tqdm(total=len(test_loader), desc='test') as t:
                         prediction = torch.argmax(obj_ann.get_attribute(i, attr)).item()
                         if prediction == target:
                             correct += 1
+                        # else:
+                        #     print(f'Incorrectly classify {attr} => pred: {prediction}, target: {target}')
                         count += 1
 
             t.set_postfix(acc='{:.3f}'.format(correct / count))

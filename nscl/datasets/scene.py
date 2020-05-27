@@ -26,10 +26,10 @@ class Scene(object):
         # Rearrange and filter objects based on detected boxes
         self.rearranged_objects = []
         for x, y, width, height in bbox:
-            obj = next((obj for obj in self.objects if x < obj.coordinates[0] < x + width
-                        and y < obj.coordinates[1] < y + height), None)
-            if obj is not None:
-                self.rearranged_objects.append(obj)
+            obj = [obj for obj in self.objects if
+                   x < obj.coordinates[0] < x + width and y < obj.coordinates[1] < y + height]
+            if len(obj) == 1:
+                self.rearranged_objects.append(obj[0])
 
     @staticmethod
     def get_objects(objects_json):
