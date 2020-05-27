@@ -31,7 +31,7 @@ class CLEVRDataset(Dataset):
         basic_scene_questions = []
 
         if gen_basic_scene_questions:
-            basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(self.scenes[q.img_index], num_questions_per_scene) for q in self.questions]
+            basic_scene_questions = [CLEVRDataset.generate_basic_scene_questions(s, num_questions_per_scene) for s in self.scenes if len(s.objects) <= max_scene_size]
             basic_scene_questions = [q for questions in basic_scene_questions for q in questions]
         
         self.questions.extend(basic_scene_questions)
