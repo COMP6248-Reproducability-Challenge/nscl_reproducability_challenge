@@ -13,16 +13,16 @@ from nscl.datasets.clevr_definition import CLEVRDefinition
 from nscl.models.loss.nscl_loss import QALoss, CESceneParsingLoss
 from nscl.models.nscl_module import NSCLModule
 
-wandb.init(project="nscl-reproduce-final")
+wandb.init(project="nscl-reproduce-final-1")
 save_interval = 5  # epoch
 
 train_img_root = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/images/train'
 train_scene_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/scenes/train/scenes.json'
 train_question_json = osp.abspath(os.getcwd()) + '/data/CLEVR_v1.0/questions/CLEVR_train_questions.json'
 
-device = "cuda:2" if torch.cuda.is_available() else "cpu"
+device = "cuda:3" if torch.cuda.is_available() else "cpu"
 
-# lesson, epoch, max_program_size, max_scene_size
+# epoch, max_program_size, max_scene_size
 curriculum_strategies = [
     # lesson 1
     (5, 4, 3),
@@ -56,7 +56,8 @@ opt = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
 for i, (epoch, max_program_size, max_scene_size) in enumerate(curriculum_strategies):
     print(f'Curriculum strategy: {max_program_size}, {max_scene_size}')
     dataset = build_clevr_dataset(train_img_root, train_scene_json, train_question_json,
-                                  max_program_size=max_program_size, max_scene_size=max_scene_size)
+                                  max_program_size=max_program_size, max_scene_size=max_scene_size,
+                                  gen_basic_scene_questions=True)
     train_dataset, val_dataset = random_split(dataset, [len(dataset) - len(dataset) // 4, len(dataset) // 4])
     train_loader = build_clevr_dataloader(train_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False,
                                           drop_last=False)
