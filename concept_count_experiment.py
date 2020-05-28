@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+from collections import defaultdict
 
 import torch
 from tqdm import tqdm
@@ -24,25 +25,37 @@ model = NSCLModule(CLEVRDefinition.attribute_concept_map).to(device)
 model.load_state_dict(torch.load('nscl_final.weights', map_location=torch.device(device)))
 model.eval()
 
-correct = 0
-count = 0
+attribute_correct = defaultdict(int)
+attribute_count = defaultdict(int)
+
 with tqdm(total=len(test_loader), desc='test') as t:
     with torch.no_grad():
         for idx, (images, questions, scenes) in enumerate(test_loader):
             _, results = model(images.to(device), questions, scenes)
 
             for i, q in enumerate(questions):
+                attr = q.program[1].attribute
                 if q.question_type == QuestionTypes.COUNT:
                     predicted_answer = int(round(results[i].item()))
                     true_answer = int(q.answer)
-
                 if true_answer == predicted_answer:
-                    correct += 1
-                count += 1
+                    attribute_correct[attr] += 1
+                attribute_count[attr] += 1
 
-            t.set_postfix(acc='{:.3f}'.format(correct / count))
+            # t.set_postfix(acc='{:.3f}'.format(correct / count))
             t.update()
 
-print('correct', correct)
-print('count', count)
-print('Count Concept Accuracy', correct / count)
+total_correct = 0
+total_count = 0
+for attr in CLEVRDefinition.attribute_concept_map.keys():
+    print(f'Attribute: {attr}')
+    print('Correct', attribute_correct[attr])
+    print('Count', attribute_count[attr])
+    print('Accuracy', attribute_correct[attr] / attribute_count[attr])
+    total_correct += attribute_correct[attr]
+    total_count += attribute_count[attr]
+    print()
+
+print('Total Correct', total_correct)
+print('Total Count', total_count)
+print('Total Accuracy', total_correct / total_count)
