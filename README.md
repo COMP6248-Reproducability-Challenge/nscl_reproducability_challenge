@@ -1,12 +1,19 @@
 # THE NEURO-SYMBOLIC CONCEPT LEARNER
 
-University of Southampton COMP6248 Reproducibility Challenge
+This repository contains the code and reproducibility [report](https://github.com/markvasin/nscl_reproducability_challenge/blob/master/NSCL_reproducability_challenge.pdf) for the [ICLR](https://iclr.cc/) 2019 paper - [The Neuro-Symbolic Concept Learner: Interpreting Scenes, Words, and Sentences From Natural Supervision](https://openreview.net/forum?id=rJgMlhRctm). This was done as part of the COMP6248 Reproducibility Challenge, a group coursework from Deep Learning class at University of Southampton.
 
-Chosen paper title: The Neuro-Symbolic Concept Learner: Interpreting Scenes, Words, and Sentences From Natural Supervision
+## Paper Summary
 
-Paper link: https://openreview.net/forum?id=rJgMlhRctm
+[Mao et al.](https://openreview.net/forum?id=rJgMlhRctm) proposed Neuro-Symbolic Concept Learner, inspired by human learning process, to learn visual concepts and accurately answer questions on the [CLEVR dataset](https://cs.stanford.edu/people/jcjohns/clevr/). Their model achieved remarkable accuracy in visual concept learning, visual question answering, and generalised well to images with more objects and more complex questions. The model is composed of three parts: a visual module to extract features from the scene, a semantic parser to translate questions into programs, and a symbolic reasoning module to execute the program to obtain an answer and bridge the learning between a visual module and a semantic parser. The training strategy is also motivated by human learning. The author employed curriculum learning strategy to help with optimisation, where the questions and scenes are presented to the model with increasing difficulty.
 
-### How to Run
+![framework](Images/framework.png)
+
+## Library
+- Python 3
+- PyTorch
+- NumPy
+
+## Usage
 1. Run download.sh to download all the necessary data
 2. To train the model, run nscl_trainer.py
 3. To evaluate the model on the validation set, run nscl_evaluator.py
