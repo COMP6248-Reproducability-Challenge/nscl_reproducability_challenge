@@ -8,6 +8,14 @@ This repository contains the code and reproducibility [report](https://github.co
 
 ![framework](Images/framework.png)
 
+## Experiments
+**Concept classification experiment**
+The objective of this experiment is to evaluate whether the model learns generic concept representation. The point is that accurate and generic representation of object properties would then be useful for various applications, including image captioning and retrieval.
+In this experiment, we evaluated the classification accuracy for all attributes (colour, material, shape, size) using the validation set. In the original paper, they reported 99\% accuracy for all object properties, however we were able to achieve around 99\% accuracy for all attributes except the shape attribute which is around 81.5\% accuracy. 
+
+**Concept count experiment** 
+Next, we performed the experiment to evaluate the accuracy of the count concept, which has been known to be difficult in deep learning due to the discrete nature of the problem. For this experiment, we evaluated our model on the validation set by generating 5 synthetic counting questions for each image. The questions generated are of the following form: "How many \texttt{Cube} objects are there?". The accuracy for all attributes except shape are quite close to what is reported in the original paper. 
+
 ## Library
 - Python 3
 - PyTorch
